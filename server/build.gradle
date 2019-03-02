@@ -11,10 +11,7 @@ sourceCompatibility = '11'
 
 repositories {
     mavenCentral()
-}
-
-ext {
-    set('springCloudVersion', 'Greenwich.RELEASE')
+    maven { url 'https://repo.spring.io/milestone' }
 }
 
 configurations {
@@ -23,12 +20,18 @@ configurations {
     }
 }
 
+ext {
+    set('springCloudVersion', 'Greenwich.RELEASE')
+}
+
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-quartz'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-undertow'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
+    implementation "javax.xml.bind:jaxb-api:${jaxb}"
+    implementation "com.sun.xml.bind:jaxb-impl:${jaxb}"
+    implementation "org.glassfish.jaxb:jaxb-runtime:${jaxb}"
+    implementation "javax.activation:activation:${jaxbActivation}"
 }
 
 dependencyManagement {

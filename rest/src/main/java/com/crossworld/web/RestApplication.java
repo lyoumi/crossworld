@@ -2,13 +2,14 @@ package com.crossworld.web;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
 @SpringBootApplication
-public class CrossworldApplication extends WebMvcAutoConfiguration {
+@EnableEurekaClient
+public class RestApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(CrossworldApplication.class, args);
+        SpringApplication.run(RestApplication.class, args);
     }
 
 }
