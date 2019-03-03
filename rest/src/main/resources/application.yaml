@@ -3,6 +3,7 @@ server:
 spring:
   application:
     name: spring-cloud-eureka-client
+
 eureka:
   client:
     serviceUrl:
@@ -10,3 +11,5 @@ eureka:
   instance:
     preferIpAddress: true
     appname: "rest"
+
+core.base: "localhost:8081/private/core/character"
