@@ -10,3 +10,14 @@ eureka:
   instance:
     preferIpAddress: true
     appname: "core"
+    health-check-url-path: ${management.endpoints.web.base-path}/${management.endpoints.web.path-mapping.health}
+
+management:
+  endpoints:
+    web:
+      base-path: /public
+      path-mapping:
+        health: health-check
+  endpoint:
+    health:
+      show-details: always

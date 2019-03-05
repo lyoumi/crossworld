@@ -34,5 +34,4 @@ public class GameCharacterResource {
     public Flux<GameCharacter> getAllGameCharacters() {
         return gameCharacterRepository.getAllGameCharacters();
     }
-
 }

@@ -11,5 +11,16 @@ eureka:
   instance:
     preferIpAddress: true
     appname: "rest"
+    health-check-url-path: ${management.endpoints.web.base-path}/${management.endpoints.web.path-mapping.health}
 
 core.base: "localhost:8081/private/core/character"
+
+management:
+  endpoints:
+    web:
+      base-path: /public
+      path-mapping:
+        health: health-check
+  endpoint:
+    health:
+      show-details: always
