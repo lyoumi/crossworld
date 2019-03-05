@@ -2,7 +2,7 @@ server:
   port: 8081
 spring:
   application:
-    name: spring-cloud-eureka-client
+    name: rest
 
 eureka:
   client:
@@ -10,10 +10,14 @@ eureka:
       defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
   instance:
     preferIpAddress: true
-    appname: "rest"
+    appname: ${spring.application.name}
     health-check-url-path: ${management.endpoints.web.base-path}/${management.endpoints.web.path-mapping.health}
 
-core.base: "localhost:8081/private/core/character"
+
+services:
+  core:
+    instance:
+      name: core
 
 management:
   endpoints:

@@ -19,6 +19,8 @@ public class GameEventSchedulerServiceImpl implements GameEventSchedulerService 
 
     @Override
     public void scheduleGameEvent() {
-        gameCharacterService.getAllGameCharacters().toStream().forEach(eventPublisher::publishEvent);
+        gameCharacterService.getAllGameCharacters()
+                .log()
+                .doOnEach(gameCharacterSignal -> eventPublisher.publishEvent(gameCharacterSignal.get()));
     }
 }

@@ -2,15 +2,19 @@ server:
   port: 8082
 spring:
   application:
-    name: spring-cloud-eureka-client
+    name: core
+  data:
+    mongodb:
+      database: crossworld
 eureka:
   client:
     serviceUrl:
       defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
   instance:
     preferIpAddress: true
-    appname: "core"
+    appname: ${spring.application.name}
     health-check-url-path: ${management.endpoints.web.base-path}/${management.endpoints.web.path-mapping.health}
+
 
 management:
   endpoints:
