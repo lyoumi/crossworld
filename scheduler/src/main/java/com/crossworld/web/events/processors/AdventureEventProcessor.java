@@ -16,21 +16,19 @@ public class AdventureEventProcessor implements EventProcessor {
     private final String FINISH_ADVENTURE_EVENT = "I'm done, man!";
 
     @Override
-    public void processEvent(GameCharacter gameCharacter) {
-        coreWebClient.getGameEventByCharacterId(gameCharacter.getId())
-                .log()
-                .doOnSuccess(gameEvent -> processAdventure(gameCharacter, gameEvent));
+    public void processEvent(GameCharacter gameCharacter, GameEvent gameEvent) {
+        processAdventure(gameCharacter, gameEvent);
     }
 
-    private void processAdventure(GameCharacter gameCharacter, GameEvent characterEvent) {
-        var eventDetails = (AdventureEventDetails) characterEvent.getEventDetails();
+    private void processAdventure(GameCharacter gameCharacter, GameEvent gameEvent) {
+        var eventDetails = (AdventureEventDetails) gameEvent.getEventDetails();
         var currentEventStep = eventDetails.getStep();
         if (currentEventStep < eventDetails.getAdventureEvents().size()) {
-            characterEvent.setCurrentAction(eventDetails.getAdventureEvents().get(currentEventStep));
+            gameEvent.setCurrentAction(eventDetails.getAdventureEvents().get(currentEventStep));
             eventDetails.setStep(++currentEventStep);
         } else {
             gameCharacter.setHasEvent(false);
-            characterEvent.setCurrentAction(FINISH_ADVENTURE_EVENT);
+            gameEvent.setCurrentAction(FINISH_ADVENTURE_EVENT);
             gameCharacter.getGameInventory()
                     .setExperience(gameCharacter.getGameInventory().getExperience() + eventDetails.getExperience());
             gameCharacter.getGameInventory()

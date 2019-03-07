@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -43,7 +44,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         return WebClient.create(getAllCharactersResource)
                 .get()
                 .retrieve()
-                .bodyToFlux(GameCharacter.class);
+                .bodyToFlux(GameCharacter.class)
+                .log();
     }
 
     @Override
@@ -59,6 +61,17 @@ public class CoreWebClientImpl implements CoreWebClient {
         return WebClient.create(gameEventResource.concat(id))
                 .get()
                 .retrieve()
-                .bodyToMono(GameEvent.class);
+                .bodyToMono(GameEvent.class)
+                .log();
+    }
+
+    @Override
+    public Mono<GameEvent> saveGameEvent(GameEvent gameEvent) {
+        return WebClient.create(GAME_EVENT_FORMAT)
+                .post()
+                .body(BodyInserters.fromObject(gameEvent))
+                .retrieve()
+                .bodyToMono(GameEvent.class)
+                .log();
     }
 }

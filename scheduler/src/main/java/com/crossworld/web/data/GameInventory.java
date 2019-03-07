@@ -10,5 +10,5 @@ public class GameInventory {
     private long experience;
     private long healingHitPointItems;
     private long healingManaPointItems;
-    private Map<EquipmentSlot, EquipmentItem> equipemnt;
+    private Map<EquipmentSlot, EquipmentItem> equipment;
 }

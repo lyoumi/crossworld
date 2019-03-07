@@ -8,6 +8,5 @@ public class GameEvent {
     private String gameCharacterId;
     private String currentAction;
     private EventStatus eventStatus;
-    private EventType eventType;
     private EventDetails eventDetails;
 }

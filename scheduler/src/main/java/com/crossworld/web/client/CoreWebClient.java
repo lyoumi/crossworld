@@ -10,4 +10,5 @@ public interface CoreWebClient {
     Flux<GameCharacter> getAllGameCharacters();
     Mono<GameCharacter> saveGameCharacter(GameCharacter gameCharacter);
     Mono<GameEvent> getGameEventByCharacterId(String id);
+    Mono<GameEvent> saveGameEvent(GameEvent gameEvent);
 }

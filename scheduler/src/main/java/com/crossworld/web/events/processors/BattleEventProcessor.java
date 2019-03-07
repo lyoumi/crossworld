@@ -18,13 +18,11 @@ public class BattleEventProcessor implements EventProcessor {
     private final CoreWebClient coreWebClient;
 
     @Override
-    public void processEvent(GameCharacter gameCharacter) {
-        coreWebClient.getGameEventByCharacterId(gameCharacter.getId())
-                .log()
-                .doOnSuccess(gameEvent -> processFight(gameEvent, gameCharacter));
+    public void processEvent(GameCharacter gameCharacter, GameEvent gameEvent) {
+        processFight(gameCharacter, gameEvent);
     }
 
-    private void processFight(GameEvent gameEvent, GameCharacter gameCharacter) {
+    private void processFight(GameCharacter gameCharacter, GameEvent gameEvent) {
         var eventDetails = (BattleEventDetails) gameEvent.getEventDetails();
         var characterStats = gameCharacter.getStats();
         var gameInventory = gameCharacter.getGameInventory();
