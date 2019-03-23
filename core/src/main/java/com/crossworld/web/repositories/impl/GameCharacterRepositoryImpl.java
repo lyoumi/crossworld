@@ -3,8 +3,8 @@ package com.crossworld.web.repositories.impl;
 import com.crossworld.web.converters.ConverterService;
 import com.crossworld.web.dao.GameCharacterDao;
 import com.crossworld.web.data.GameCharacter;
-import com.crossworld.web.entities.GameCharacterEntity;
 import com.crossworld.web.repositories.GameCharacterRepository;
+
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

@@ -1,6 +1,7 @@
 package com.crossworld.web.clients;
 
 import com.crossworld.web.data.GameCharacter;
+
 import reactor.core.publisher.Mono;
 
 public interface CoreWebClient {

@@ -9,7 +9,8 @@ import com.crossworld.web.data.EventType;
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
 import com.crossworld.web.data.Monster;
-import com.crossworld.web.events.EventProcessor;
+import com.crossworld.web.processors.EventProcessor;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

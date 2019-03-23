@@ -1,4 +1,4 @@
-package com.crossworld.web.events;
+package com.crossworld.web.processors;
 
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;

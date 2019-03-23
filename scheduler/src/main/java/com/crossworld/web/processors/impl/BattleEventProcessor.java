@@ -1,4 +1,4 @@
-package com.crossworld.web.events.processors;
+package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.BattleEventDetails;
@@ -7,7 +7,8 @@ import com.crossworld.web.data.EventStatus;
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
 import com.crossworld.web.data.GameInventory;
-import com.crossworld.web.events.EventProcessor;
+import com.crossworld.web.processors.EventProcessor;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 

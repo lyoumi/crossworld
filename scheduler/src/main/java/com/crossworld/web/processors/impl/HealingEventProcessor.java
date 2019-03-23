@@ -1,8 +1,9 @@
-package com.crossworld.web.events.processors;
+package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
-import com.crossworld.web.events.EventProcessor;
+import com.crossworld.web.processors.EventProcessor;
+
 import org.springframework.stereotype.Component;
 
 @Component("healingEventProcessor")
