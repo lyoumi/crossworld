@@ -26,7 +26,7 @@ public class GameCharacterResource {
         return gameCharacterRepository.getUsersCharacter(userId);
     }
 
-    @PostMapping("save")
+    @PostMapping
     public Mono<GameCharacter> saveCharacter(@RequestBody GameCharacter gameCharacter) {
         return gameCharacterRepository.save(gameCharacter);
     }

@@ -61,6 +61,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
                 .post()
+                .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
                 .bodyToMono(GameCharacter.class);
     }

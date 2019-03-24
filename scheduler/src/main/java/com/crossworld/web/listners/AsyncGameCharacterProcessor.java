@@ -61,7 +61,7 @@ public class AsyncGameCharacterProcessor {
                 gameCharacter.getId(),
                 "",
                 EventStatus.IN_PROGRESS,
-                generateRandomEvent(gameCharacter));
+                generateRandomEventDetails(gameCharacter));
         coreWebClient.saveGameEvent(gameEvent).log();
     }
 
@@ -73,8 +73,8 @@ public class AsyncGameCharacterProcessor {
                         .accept(gameCharacter, gameEvent));
     }
 
-    private EventDetails generateRandomEvent(GameCharacter gameCharacter) {
-        EventType eventType = List.of(EventType.values()).get(RANDOM.nextInt(EventType.values().length));
+    private EventDetails generateRandomEventDetails(GameCharacter gameCharacter) {
+        EventType eventType = List.of(EventType.values()).get(RANDOM.nextInt(EventType.values().length - 1));
         return EVENT_DETAILS_GENERATORS.get(eventType).apply(gameCharacter);
     }
 

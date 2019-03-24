@@ -26,10 +26,9 @@ configurations {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
     implementation 'org.springframework.boot:spring-boot-starter-undertow'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+//    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-//    implementation 'org.springframework.cloud:spring-cloud-commons'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
