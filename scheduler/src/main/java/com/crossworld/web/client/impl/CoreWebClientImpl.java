@@ -1,5 +1,8 @@
 package com.crossworld.web.client.impl;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
+
 import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
@@ -16,6 +19,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 
 @Component
@@ -33,7 +37,6 @@ public class CoreWebClientImpl implements CoreWebClient {
 
     private final LoadBalancerClient loadBalancerClient;
 
-
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {
         String coreBaseUrl = Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
@@ -45,8 +48,10 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         return WebClient.create(String.format(ALL_CHARACTERS_FORMAT, coreBaseUrl))
                 .get()
+                .accept(APPLICATION_STREAM_JSON)
                 .retrieve()
                 .bodyToFlux(GameCharacter.class)
+                .timeout(Duration.ofSeconds(5))
                 .log();
     }
 
@@ -61,9 +66,12 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
                 .post()
+                .accept(APPLICATION_JSON)
+                .contentType(APPLICATION_JSON)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
-                .bodyToMono(GameCharacter.class);
+                .bodyToMono(GameCharacter.class)
+                .log();
     }
 
     @Override
@@ -77,6 +85,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         return WebClient.create(String.format(GAME_EVENT_FORMAT, coreBaseUrl))
                 .get()
+                .accept(APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(GameEvent.class)
                 .log();

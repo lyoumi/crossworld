@@ -35,6 +35,6 @@ public class AdventureEventProcessor implements EventProcessor {
             gameCharacter.getGameInventory()
                     .setGold(gameCharacter.getGameInventory().getGold() + eventDetails.getGold());
         }
-        coreWebClient.saveGameCharacter(gameCharacter);
+        coreWebClient.saveGameCharacter(gameCharacter).subscribe();
     }
 }

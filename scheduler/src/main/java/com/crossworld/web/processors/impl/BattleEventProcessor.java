@@ -40,7 +40,7 @@ public class BattleEventProcessor implements EventProcessor {
             }
         }
 
-        coreWebClient.saveGameCharacter(gameCharacter);
+        coreWebClient.saveGameCharacter(gameCharacter).subscribe();
     }
 
     private void collectAwards(GameInventory gameInventory, BattleEventDetails eventDetails) {

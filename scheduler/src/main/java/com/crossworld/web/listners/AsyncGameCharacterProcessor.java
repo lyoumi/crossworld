@@ -62,13 +62,13 @@ public class AsyncGameCharacterProcessor {
                 "",
                 EventStatus.IN_PROGRESS,
                 generateRandomEventDetails(gameCharacter));
-        coreWebClient.saveGameEvent(gameEvent).log();
+        coreWebClient.saveGameEvent(gameEvent).subscribe();
     }
 
     private void progressCharacterEvent(GameCharacter gameCharacter) {
         coreWebClient.getGameEventByCharacterId(gameCharacter.getId())
                 .log()
-                .doOnSuccess(gameEvent -> eventProcessors
+                .subscribe(gameEvent -> eventProcessors
                         .get(gameEvent.getEventDetails().getEventType())
                         .accept(gameCharacter, gameEvent));
     }

@@ -22,6 +22,6 @@ public class GameEventSchedulerServiceImpl implements GameEventSchedulerService 
     public void scheduleGameEvent() {
         gameCharacterService.getAllGameCharacters()
                 .log()
-                .doOnEach(gameCharacterSignal -> eventPublisher.publishEvent(gameCharacterSignal.get()));
+                .subscribe(eventPublisher::publishEvent);
     }
 }
