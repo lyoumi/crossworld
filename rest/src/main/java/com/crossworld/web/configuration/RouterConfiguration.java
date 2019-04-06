@@ -17,6 +17,6 @@ public class RouterConfiguration {
     @Bean
     public RouterFunction<ServerResponse> router(GameEventHandler gameEventHandler) {
         return route(POST("/private/rest/game"), gameEventHandler::createGameCharacter)
-                .andRoute(GET("/private/rest/game/{user_id}"), gameEventHandler::getGatUserCharacter);
+                .andRoute(GET("/private/rest/game/{user_id}"), gameEventHandler::getUserGameCharacter);
     }
 }
