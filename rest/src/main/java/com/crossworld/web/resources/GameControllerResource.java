@@ -30,7 +30,7 @@ public class GameControllerResource {
     }
 
     @GetMapping("{user_id}")
-    public Mono<GameCharacter> getGatUserCharacter(@PathVariable("user_id") String userId) {
+    public Mono<GameCharacter> getUserGameCharacter(@PathVariable("user_id") String userId) {
         return gameControllerService.getUserCharacter(userId);
     }
 }
