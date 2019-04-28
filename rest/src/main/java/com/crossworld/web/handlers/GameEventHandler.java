@@ -36,7 +36,7 @@ public class GameEventHandler {
                 ).log();
     }
 
-    public Mono<ServerResponse> getUserGameCharacter(ServerRequest serverRequest) {
+    public Mono<ServerResponse> getGatUserCharacter(ServerRequest serverRequest) {
         return ServerResponse
                 .ok()
                 .contentType(APPLICATION_JSON)
