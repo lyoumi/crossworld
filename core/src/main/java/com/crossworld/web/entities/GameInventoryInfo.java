@@ -14,5 +14,5 @@ public class GameInventoryInfo implements Serializable {
     private long experience;
     private long healingHitPointItems;
     private long healingManaPointItems;
-    private Map<EquipmentSlot, EquipmentItem> equipemnt;
+    private Map<EquipmentSlot, EquipmentItem> equipment;
 }

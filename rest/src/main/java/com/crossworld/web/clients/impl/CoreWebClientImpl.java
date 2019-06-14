@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -23,6 +24,7 @@ import java.util.Optional;
 public class CoreWebClientImpl implements CoreWebClient {
 
     private static final String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
+    private static final String REQUEST_ID_HEADER_NAME = "request_id";
 
     private static final String USER_CHARACTER_FORMAT = "%s/private/core/character/user/%s/";
     private static final String SAVE_CHARACTER_FORMAT = "%s/private/core/character/";
@@ -41,8 +43,11 @@ public class CoreWebClientImpl implements CoreWebClient {
                         new ServiceNotAvailableException(
                                 String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
 
+        String requestId = UUID.randomUUID().toString();
+
         return WebClient.create(String.format(USER_CHARACTER_FORMAT, coreBaseUrl, userId))
                 .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .bodyToMono(GameCharacter.class)
                 .log();
@@ -57,8 +62,11 @@ public class CoreWebClientImpl implements CoreWebClient {
                         new ServiceNotAvailableException(
                                 String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
 
+        String requestId = UUID.randomUUID().toString();
+
         return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
                 .post()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
                 .bodyToMono(GameCharacter.class)

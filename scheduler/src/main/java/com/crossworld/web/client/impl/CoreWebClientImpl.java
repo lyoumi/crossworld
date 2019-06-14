@@ -7,8 +7,8 @@ import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
 import com.crossworld.web.exception.ServiceNotAvailableException;
-
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
@@ -19,14 +19,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
+import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CoreWebClientImpl implements CoreWebClient {
 
     private static final String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
+    private static final String REQUEST_ID_HEADER_NAME = "request_id";
 
     private static final String ALL_CHARACTERS_FORMAT = "%s/private/core/character/all/";
     private static final String SAVE_CHARACTER_FORMAT = "%s/private/core/character/";
@@ -45,14 +47,21 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .orElseThrow(() ->
                         new ServiceNotAvailableException(
                                 String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+        
+        String requestId = UUID.randomUUID().toString();
 
         return WebClient.create(String.format(ALL_CHARACTERS_FORMAT, coreBaseUrl))
                 .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_STREAM_JSON)
                 .retrieve()
                 .bodyToFlux(GameCharacter.class)
-                .timeout(Duration.ofSeconds(5))
-                .log();
+                .doOnNext(body -> log.info("Incoming response {} from {}: {{}}",
+                        requestId, coreInstanceName, body))
+                .doOnComplete(() -> log.info("Incoming response {} from {} was successfully received",
+                        requestId, coreInstanceName))
+                .doOnError(exception ->
+                        log.error("Unable to process response {} from server: {}", requestId, exception));
     }
 
     @Override
@@ -64,14 +73,16 @@ public class CoreWebClientImpl implements CoreWebClient {
                         new ServiceNotAvailableException(
                                 String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
 
+        String requestId = UUID.randomUUID().toString();
+
         return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
                 .post()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_JSON)
                 .contentType(APPLICATION_JSON)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
-                .bodyToMono(GameCharacter.class)
-                .log();
+                .bodyToMono(GameCharacter.class);
     }
 
     @Override
@@ -83,12 +94,14 @@ public class CoreWebClientImpl implements CoreWebClient {
                         new ServiceNotAvailableException(
                                 String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
 
+        String requestId = UUID.randomUUID().toString();
+
         return WebClient.create(String.format(GAME_EVENT_FORMAT, coreBaseUrl))
                 .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(GameEvent.class)
-                .log();
+                .bodyToMono(GameEvent.class);
     }
 
     @Override
@@ -100,11 +113,13 @@ public class CoreWebClientImpl implements CoreWebClient {
                         new ServiceNotAvailableException(
                                 String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
 
+        String requestId = UUID.randomUUID().toString();
+
         return WebClient.create(String.format(GAME_EVENT_FORMAT, coreBaseUrl))
                 .post()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .body(BodyInserters.fromObject(gameEvent))
                 .retrieve()
-                .bodyToMono(GameEvent.class)
-                .log();
+                .bodyToMono(GameEvent.class);
     }
 }

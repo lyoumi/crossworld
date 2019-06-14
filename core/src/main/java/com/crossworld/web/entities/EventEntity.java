@@ -12,6 +12,5 @@ public class EventEntity implements Serializable {
     private String gameCharacterId;
     private String eventStatus;
     private String currentAction;
-    private String eventType;
     private EventDetailsInfo eventDetails;
 }

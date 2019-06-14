@@ -12,10 +12,10 @@ import reactor.core.publisher.Flux;
 @AllArgsConstructor
 public class GameCharacterServiceImpl implements GameCharacterService {
 
-    private final CoreWebClient gameCharacterRepository;
+    private final CoreWebClient coreWebClient;
 
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {
-        return gameCharacterRepository.getAllGameCharacters();
+        return coreWebClient.getAllGameCharacters();
     }
 }
