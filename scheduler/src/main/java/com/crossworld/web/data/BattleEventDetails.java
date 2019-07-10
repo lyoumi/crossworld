@@ -1,5 +1,6 @@
 package com.crossworld.web.data;
 
+import com.crossworld.web.data.battle.Monster;
 import lombok.Data;
 
 @Data

@@ -2,6 +2,7 @@ package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.AdventureEventDetails;
+import com.crossworld.web.data.EventStatus;
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
 import com.crossworld.web.processors.EventProcessor;
@@ -34,6 +35,7 @@ public class AdventureEventProcessor implements EventProcessor {
                     .setExperience(gameCharacter.getGameInventory().getExperience() + eventDetails.getExperience());
             gameCharacter.getGameInventory()
                     .setGold(gameCharacter.getGameInventory().getGold() + eventDetails.getGold());
+            gameEvent.setEventStatus(EventStatus.CLOSED);
         }
         coreWebClient.saveGameCharacter(gameCharacter).subscribe();
     }

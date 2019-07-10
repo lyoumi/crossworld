@@ -1,4 +1,4 @@
-package com.crossworld.web.listners;
+package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.AdventureEventDetails;
@@ -8,37 +8,37 @@ import com.crossworld.web.data.EventStatus;
 import com.crossworld.web.data.EventType;
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
-import com.crossworld.web.data.Monster;
+import com.crossworld.web.data.HealingEventDetails;
+import com.crossworld.web.data.battle.Monster;
+import com.crossworld.web.processors.BaseGameCharacterProcessor;
 import com.crossworld.web.processors.EventProcessor;
-
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 @Component
-public class AsyncGameCharacterProcessor {
+public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcessor {
 
     private static final Random RANDOM = new Random();
     private static final Map<EventType, Function<GameCharacter, EventDetails>> EVENT_DETAILS_GENERATORS =
-            Map.of(EventType.ADVENTURE, AsyncGameCharacterProcessor::generateAdventureEventDetails,
-                    EventType.BATTLE, AsyncGameCharacterProcessor::generateBattleEventDetails,
-                    EventType.HEALING, AsyncGameCharacterProcessor::generateHealingEventDetails);
+            Map.of(EventType.ADVENTURE, BaseGameCharacterProcessorImpl::generateAdventureEventDetails,
+                    EventType.BATTLE, BaseGameCharacterProcessorImpl::generateBattleEventDetails,
+                    EventType.HEALING, BaseGameCharacterProcessorImpl::generateHealingEventDetails);
 
     private final Map<EventType, BiConsumer<GameCharacter, GameEvent>> eventProcessors;
 
     private final CoreWebClient coreWebClient;
 
-    public AsyncGameCharacterProcessor(CoreWebClient coreWebClient,
-                                       EventProcessor battleEventProcessor,
-                                       EventProcessor adventureEventProcessor,
-                                       EventProcessor healingEventProcessor) {
+    public BaseGameCharacterProcessorImpl(CoreWebClient coreWebClient,
+            EventProcessor battleEventProcessor,
+            EventProcessor adventureEventProcessor,
+            EventProcessor healingEventProcessor) {
         this.coreWebClient = coreWebClient;
         eventProcessors = Map.of(
                 EventType.ADVENTURE, adventureEventProcessor::processEvent,
@@ -47,13 +47,15 @@ public class AsyncGameCharacterProcessor {
         );
     }
 
-    @Async
-    @EventListener
+    @Override
     public void processCharacterEvents(GameCharacter gameCharacter) {
-        if (!gameCharacter.isHasEvent()) {
-            createCharacterEvent(gameCharacter);
-        }
-        progressCharacterEvent(gameCharacter);
+        Optional.ofNullable(gameCharacter).ifPresent(gc -> {
+            if (!gc.isHasEvent()) {
+                createCharacterEvent(gc);
+            }
+            progressCharacterEvent(gc);
+        });
+
     }
 
     private void createCharacterEvent(GameCharacter gameCharacter) {
@@ -62,20 +64,25 @@ public class AsyncGameCharacterProcessor {
                 "",
                 EventStatus.IN_PROGRESS,
                 generateRandomEventDetails(gameCharacter));
+        gameCharacter.setHasEvent(true);
+        coreWebClient.saveGameCharacter(gameCharacter).subscribe();
         coreWebClient.saveGameEvent(gameEvent).subscribe();
     }
 
     private void progressCharacterEvent(GameCharacter gameCharacter) {
         coreWebClient.getGameEventByCharacterId(gameCharacter.getId())
                 .log()
-                .subscribe(gameEvent -> eventProcessors
-                        .get(gameEvent.getEventDetails().getEventType())
-                        .accept(gameCharacter, gameEvent));
+                .subscribe(
+                        gameEvent -> eventProcessors
+                                .get(gameEvent.getEventDetails().getEventType())
+                                .accept(gameCharacter, gameEvent));
     }
 
     private EventDetails generateRandomEventDetails(GameCharacter gameCharacter) {
         EventType eventType = List.of(EventType.values()).get(RANDOM.nextInt(EventType.values().length - 1));
-        return EVENT_DETAILS_GENERATORS.get(eventType).apply(gameCharacter);
+        EventDetails eventDetails = EVENT_DETAILS_GENERATORS.get(eventType).apply(gameCharacter);
+        eventDetails.setEventType(eventType);
+        return eventDetails;
     }
 
     //TODO: rewrite to generation by character stats/progress
@@ -90,7 +97,7 @@ public class AsyncGameCharacterProcessor {
 
     private static EventDetails generateHealingEventDetails(GameCharacter gameCharacter) {
         EventDetails eventDetails;
-        eventDetails = new EventDetails();
+        eventDetails = new HealingEventDetails();
         eventDetails.setExperience(42);
         return eventDetails;
     }

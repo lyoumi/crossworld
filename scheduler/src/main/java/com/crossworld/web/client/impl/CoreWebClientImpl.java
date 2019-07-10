@@ -6,12 +6,14 @@ import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.data.GameEvent;
+import com.crossworld.web.exception.ServiceCommunicationException;
 import com.crossworld.web.exception.ServiceNotAvailableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -55,6 +57,11 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_STREAM_JSON)
                 .retrieve()
+                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
+                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
+                            requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                })
                 .bodyToFlux(GameCharacter.class)
                 .doOnNext(body -> log.info("Incoming response {} from {}: {{}}",
                         requestId, coreInstanceName, body))
@@ -82,6 +89,11 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .contentType(APPLICATION_JSON)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
+                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
+                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
+                            requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                })
                 .bodyToMono(GameCharacter.class);
     }
 
@@ -96,11 +108,16 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         String requestId = UUID.randomUUID().toString();
 
-        return WebClient.create(String.format(GAME_EVENT_FORMAT, coreBaseUrl))
+        return WebClient.create(String.format(GAME_EVENT_FORMAT, coreBaseUrl).concat(id))
                 .get()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_JSON)
                 .retrieve()
+                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
+                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
+                            requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                })
                 .bodyToMono(GameEvent.class);
     }
 
@@ -120,6 +137,11 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .body(BodyInserters.fromObject(gameEvent))
                 .retrieve()
+                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
+                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
+                            requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                })
                 .bodyToMono(GameEvent.class);
     }
 }
