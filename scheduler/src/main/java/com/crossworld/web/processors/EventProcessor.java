@@ -1,8 +1,7 @@
 package com.crossworld.web.processors;
 
-import com.crossworld.web.data.GameCharacter;
-import com.crossworld.web.data.GameEvent;
+import com.crossworld.web.data.character.GameCharacter;
 
 public interface EventProcessor {
-    void processEvent(GameCharacter gameCharacter, GameEvent gameEvent);
+    void processEvent(GameCharacter gameCharacter);
 }

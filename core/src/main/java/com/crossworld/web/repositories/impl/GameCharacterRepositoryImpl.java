@@ -39,4 +39,9 @@ public class GameCharacterRepositoryImpl implements GameCharacterRepository {
                 .findByUserId(userId)
                 .map(converterService::convert);
     }
+
+    @Override
+    public Mono<Void> deleteAll() {
+        return gameCharacterDao.deleteAll();
+    }
 }
