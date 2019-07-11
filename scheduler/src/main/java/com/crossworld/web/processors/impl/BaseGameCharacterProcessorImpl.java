@@ -1,37 +1,44 @@
 package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
-import com.crossworld.web.data.AdventureEventDetails;
-import com.crossworld.web.data.BattleEventDetails;
-import com.crossworld.web.data.EventDetails;
-import com.crossworld.web.data.EventStatus;
-import com.crossworld.web.data.EventType;
-import com.crossworld.web.data.GameCharacter;
-import com.crossworld.web.data.GameEvent;
-import com.crossworld.web.data.HealingEventDetails;
-import com.crossworld.web.data.battle.Monster;
+import com.crossworld.web.data.events.adventure.AdventureStatus;
+import com.crossworld.web.data.events.EventType;
+import com.crossworld.web.data.events.adventure.Adventure;
+import com.crossworld.web.data.events.awards.Awards;
+import com.crossworld.web.data.events.battle.BattleInfo;
+import com.crossworld.web.data.events.battle.Monster;
+import com.crossworld.web.data.events.battle.MonsterType;
+import com.crossworld.web.data.character.GameCharacter;
 import com.crossworld.web.processors.BaseGameCharacterProcessor;
 import com.crossworld.web.processors.EventProcessor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Component
 public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcessor {
 
     private static final Random RANDOM = new Random();
-    private static final Map<EventType, Function<GameCharacter, EventDetails>> EVENT_DETAILS_GENERATORS =
-            Map.of(EventType.ADVENTURE, BaseGameCharacterProcessorImpl::generateAdventureEventDetails,
-                    EventType.BATTLE, BaseGameCharacterProcessorImpl::generateBattleEventDetails,
-                    EventType.HEALING, BaseGameCharacterProcessorImpl::generateHealingEventDetails);
 
-    private final Map<EventType, BiConsumer<GameCharacter, GameEvent>> eventProcessors;
+    //TODO: FTCW-12. Rewrite it using real stories e.g. stored in DB
+    private static final String ADVENTURE_DESCRIPTION = "Some description";
+    private static final List<String> ADVENTURE_EVENTS = List.of("1st event", "2nd event", "3rd event", "Last event");
+
+    private static final Map<EventType, List<EventType>> EVENT_GENERATION_RESTRICTION_MAP =
+            Map.of(EventType.ADVENTURE, Collections.emptyList(),
+                    EventType.BATTLE, List.of(EventType.ADVENTURE),
+                    EventType.REGENERATION, List.of(EventType.ADVENTURE));
+    private final Map<EventType, Consumer<GameCharacter>> eventGenerator;
+
+    private final Map<EventType, Consumer<GameCharacter>> eventProcessors;
 
     private final CoreWebClient coreWebClient;
 
@@ -40,74 +47,90 @@ public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcesso
             EventProcessor adventureEventProcessor,
             EventProcessor healingEventProcessor) {
         this.coreWebClient = coreWebClient;
+
         eventProcessors = Map.of(
                 EventType.ADVENTURE, adventureEventProcessor::processEvent,
                 EventType.BATTLE, battleEventProcessor::processEvent,
-                EventType.HEALING, healingEventProcessor::processEvent
+                EventType.REGENERATION, healingEventProcessor::processEvent
         );
+        eventGenerator = Map.of(EventType.ADVENTURE, this::generateAdventure,
+                EventType.BATTLE, this::generateBattle,
+                EventType.REGENERATION, this::generateRegenerationEvent);;
     }
 
     @Override
     public void processCharacterEvents(GameCharacter gameCharacter) {
         Optional.ofNullable(gameCharacter).ifPresent(gc -> {
-            if (!gc.isHasEvent()) {
-                createCharacterEvent(gc);
-            }
-            progressCharacterEvent(gc);
+            var existingCharacterEvents = Map.of(
+                    EventType.ADVENTURE, gc.isInAdventure(),
+                    EventType.BATTLE, gc.isFighting(),
+                    EventType.REGENERATION, gc.isResting());
+
+            var activeEvents = existingCharacterEvents.entrySet()
+                    .stream()
+                    .filter(Entry::getValue)
+                    .map(Entry::getKey)
+                    .collect(Collectors.toList());
+
+            generateNewEvents(gc, existingCharacterEvents, activeEvents);
+            progressExistingEvents(gc, activeEvents);
         });
 
     }
 
-    private void createCharacterEvent(GameCharacter gameCharacter) {
-        GameEvent gameEvent = new GameEvent(UUID.randomUUID().toString(),
-                gameCharacter.getId(),
-                "",
-                EventStatus.IN_PROGRESS,
-                generateRandomEventDetails(gameCharacter));
-        gameCharacter.setHasEvent(true);
-        coreWebClient.saveGameCharacter(gameCharacter).subscribe();
-        coreWebClient.saveGameEvent(gameEvent).subscribe();
+    private void progressExistingEvents(GameCharacter gc, List<EventType> activeEvents) {
+        activeEvents.forEach(activeEvent -> eventProcessors.get(activeEvent).accept(gc));
     }
 
-    private void progressCharacterEvent(GameCharacter gameCharacter) {
-        coreWebClient.getGameEventByCharacterId(gameCharacter.getId())
-                .log()
-                .subscribe(
-                        gameEvent -> eventProcessors
-                                .get(gameEvent.getEventDetails().getEventType())
-                                .accept(gameCharacter, gameEvent));
-    }
+    private void generateNewEvents(GameCharacter gc, Map<EventType, Boolean> characterEvents,
+            List<EventType> activeEvents) {
+        var missingEvents = characterEvents.entrySet()
+                .stream()
+                .filter(entry -> !entry.getValue())
+                .map(Entry::getKey)
+                .collect(Collectors.toList());
 
-    private EventDetails generateRandomEventDetails(GameCharacter gameCharacter) {
-        EventType eventType = List.of(EventType.values()).get(RANDOM.nextInt(EventType.values().length - 1));
-        EventDetails eventDetails = EVENT_DETAILS_GENERATORS.get(eventType).apply(gameCharacter);
-        eventDetails.setEventType(eventType);
-        return eventDetails;
+        missingEvents.forEach(eventType -> {
+            var eventGenerationRestrictions = EVENT_GENERATION_RESTRICTION_MAP.get(eventType);
+            if (eventGenerationRestrictions.containsAll(activeEvents)
+                    && activeEvents.containsAll(eventGenerationRestrictions)) {
+                eventGenerator.get(eventType).accept(gc);
+                coreWebClient.saveGameCharacter(gc).subscribe();
+            }
+        });
     }
-
     //TODO: rewrite to generation by character stats/progress
-    private static EventDetails generateAdventureEventDetails(GameCharacter gameCharacter) {
-        AdventureEventDetails eventDetails;
-        eventDetails = new AdventureEventDetails();
-        eventDetails.setAdventureEvents(List.of("Some event"));
-        eventDetails.setGold(2000);
-        eventDetails.setExperience(2000);
-        return eventDetails;
+
+    private void generateAdventure(GameCharacter gameCharacter) {
+        var awards = new Awards(UUID.randomUUID().toString(),
+                RANDOM.nextInt(gameCharacter.getProgress().getLevel() * 10),
+                RANDOM.nextInt(gameCharacter.getProgress().getLevel() * 10));
+        var adventure = new Adventure(UUID.randomUUID().toString(), gameCharacter.getId(),
+                ADVENTURE_DESCRIPTION, awards.getId(), AdventureStatus.IN_PROGRESS, ADVENTURE_EVENTS, 0);
+
+        gameCharacter.setInAdventure(true);
+
+        coreWebClient.saveAdventure(adventure).subscribe();
+        coreWebClient.saveAwards(awards).subscribe();
     }
 
-    private static EventDetails generateHealingEventDetails(GameCharacter gameCharacter) {
-        EventDetails eventDetails;
-        eventDetails = new HealingEventDetails();
-        eventDetails.setExperience(42);
-        return eventDetails;
+    private void generateRegenerationEvent(GameCharacter gameCharacter) {
+
     }
 
-    private static EventDetails generateBattleEventDetails(GameCharacter gameCharacter) {
-        BattleEventDetails eventDetails;
-        eventDetails = new BattleEventDetails();
-        eventDetails.setMonster(new Monster(42, 24));
-        eventDetails.setGold(100);
-        eventDetails.setExperience(300);
-        return eventDetails;
+    private void generateBattle(GameCharacter gameCharacter) {
+        var monster = new Monster(UUID.randomUUID().toString(),
+                gameCharacter.getStats().getHitPoints() /2,
+                gameCharacter.getStats().getAttack() /2,
+                MonsterType.SOLDIER);
+        var awards = new Awards(UUID.randomUUID().toString(), 42, 73);
+        var battleInfo = new BattleInfo(UUID.randomUUID().toString(), gameCharacter.getId(),
+                monster.getId(), awards.getId());
+
+        gameCharacter.setFighting(true);
+
+        coreWebClient.saveMonster(monster);
+        coreWebClient.saveBattleInfo(battleInfo);
+        coreWebClient.saveAwards(awards);
     }
 }
