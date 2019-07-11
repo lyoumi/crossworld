@@ -1,10 +1,11 @@
 package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
-import com.crossworld.web.data.events.adventure.AdventureStatus;
-import com.crossworld.web.data.events.adventure.Adventure;
-import com.crossworld.web.data.character.GameCharacter;
+import com.crossworld.web.data.AdventureEventDetails;
+import com.crossworld.web.data.GameCharacter;
+import com.crossworld.web.data.GameEvent;
 import com.crossworld.web.processors.EventProcessor;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,40 +17,24 @@ public class AdventureEventProcessor implements EventProcessor {
     private final String FINISH_ADVENTURE_EVENT = "I'm done, man!";
 
     @Override
-    public void processEvent(GameCharacter gameCharacter) {
-        processAdventure(gameCharacter);
+    public void processEvent(GameCharacter gameCharacter, GameEvent gameEvent) {
+        processAdventure(gameCharacter, gameEvent);
     }
 
-    private void processAdventure(GameCharacter gameCharacter) {
-        if (!gameCharacter.isFighting()) {
-            coreWebClient.getActiveAdventureByCharacterId(gameCharacter.getId())
-                    .subscribe(adventure -> {
-                        var currentEventStep = adventure.getStep();
-                        if (currentEventStep < adventure.getAdventureEvents().size()) {
-                            gameCharacter.setCurrentAction(adventure.getAdventureEvents().get(currentEventStep));
-                            adventure.setStep(++currentEventStep);
-                        } else {
-                            finishAdventure(gameCharacter, adventure);
-                        }
-                    });
-
-            coreWebClient.saveGameCharacter(gameCharacter).subscribe();
+    private void processAdventure(GameCharacter gameCharacter, GameEvent gameEvent) {
+        var eventDetails = (AdventureEventDetails) gameEvent.getEventDetails();
+        var currentEventStep = eventDetails.getStep();
+        if (currentEventStep < eventDetails.getAdventureEvents().size()) {
+            gameEvent.setCurrentAction(eventDetails.getAdventureEvents().get(currentEventStep));
+            eventDetails.setStep(++currentEventStep);
+        } else {
+            gameCharacter.setHasEvent(false);
+            gameEvent.setCurrentAction(FINISH_ADVENTURE_EVENT);
+            gameCharacter.getGameInventory()
+                    .setExperience(gameCharacter.getGameInventory().getExperience() + eventDetails.getExperience());
+            gameCharacter.getGameInventory()
+                    .setGold(gameCharacter.getGameInventory().getGold() + eventDetails.getGold());
         }
-    }
-
-    private void finishAdventure(GameCharacter gameCharacter, Adventure adventure) {
-        gameCharacter.setInAdventure(false);
-        gameCharacter.setCurrentAction(FINISH_ADVENTURE_EVENT);
-        adventure.setStatus(AdventureStatus.CLOSED);
-
-        coreWebClient.saveAdventure(adventure).subscribe();
-
-        coreWebClient.getAwardsById(adventure.getAwardsId())
-            .subscribe(awards -> {
-                gameCharacter.getGameInventory()
-                        .setExperience(gameCharacter.getGameInventory().getExperience() + awards.getExperience());
-                gameCharacter.getGameInventory()
-                        .setGold(gameCharacter.getGameInventory().getGold() + awards.getGold());
-            });
+        coreWebClient.saveGameCharacter(gameCharacter).subscribe();
     }
 }

@@ -11,6 +11,4 @@ public interface GameCharacterRepository {
     Mono<GameCharacter> save(GameCharacter gameCharacter);
 
     Mono<GameCharacter> getUsersCharacter(String userId);
-
-    Mono<Void> deleteAll();
 }

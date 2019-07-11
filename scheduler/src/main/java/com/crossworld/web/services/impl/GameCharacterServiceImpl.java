@@ -1,7 +1,7 @@
 package com.crossworld.web.services.impl;
 
 import com.crossworld.web.client.CoreWebClient;
-import com.crossworld.web.data.character.GameCharacter;
+import com.crossworld.web.data.GameCharacter;
 import com.crossworld.web.services.GameCharacterService;
 
 import lombok.AllArgsConstructor;

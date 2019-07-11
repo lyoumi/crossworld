@@ -1,6 +1,8 @@
 package com.crossworld.web.entities;
 
 import com.crossworld.web.data.EquipmentItem;
+import com.crossworld.web.data.EquipmentSlot;
+
 import lombok.Data;
 
 import java.io.Serializable;
@@ -12,5 +14,5 @@ public class GameInventoryInfo implements Serializable {
     private long experience;
     private long healingHitPointItems;
     private long healingManaPointItems;
-    private Map<String, EquipmentItem> equipment;
+    private Map<EquipmentSlot, EquipmentItem> equipment;
 }

@@ -1,4 +1,4 @@
-package com.crossworld.web.data.events.battle;
+package com.crossworld.web.data.battle;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,8 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Monster {
-    private String id;
+
     private long hitPoints;
     private long attack;
-    private MonsterType monsterType;
 }

@@ -1,23 +1,17 @@
 package com.crossworld.web.client.impl;
 
-import static java.util.UUID.randomUUID;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 
 import com.crossworld.web.client.CoreWebClient;
-import com.crossworld.web.data.events.adventure.Adventure;
-import com.crossworld.web.data.events.awards.Awards;
-import com.crossworld.web.data.events.battle.BattleInfo;
-import com.crossworld.web.data.events.battle.Monster;
-import com.crossworld.web.data.character.GameCharacter;
-import com.crossworld.web.exception.ServiceCommunicationException;
+import com.crossworld.web.data.GameCharacter;
+import com.crossworld.web.data.GameEvent;
 import com.crossworld.web.exception.ServiceNotAvailableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -26,6 +20,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -37,10 +32,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
     private static final String ALL_CHARACTERS_FORMAT = "%s/private/core/character/all/";
     private static final String SAVE_CHARACTER_FORMAT = "%s/private/core/character/";
-    private static final String ADVENTURE_FORMAT = "%s/private/core/adventure/";
-    private static final String BATTLE_FORMAT = "%s/private/core/battle/";
-    private static final String MONSTER_FORMAT = "%s/private/core/monster/";
-    private static final String AWARDS_FORMAT = "%s/private/core/awards/";
+    private static final String GAME_EVENT_FORMAT = "%s/private/core/character/event/";
 
     @Value("${services.core.instance.name}")
     private String coreInstanceName;
@@ -49,36 +41,39 @@ public class CoreWebClientImpl implements CoreWebClient {
 
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
+        String coreBaseUrl = Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
+                .map(ServiceInstance::getUri)
+                .map(URI::toString)
+                .orElseThrow(() ->
+                        new ServiceNotAvailableException(
+                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+        
+        String requestId = UUID.randomUUID().toString();
 
         return WebClient.create(String.format(ALL_CHARACTERS_FORMAT, coreBaseUrl))
                 .get()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_STREAM_JSON)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error(
-                            "Unable to get success response: { request_id: {}, status_code: {}} from service {{} : {}}",
-                            requestId, clientResponse.statusCode(), coreInstanceName, coreBaseUrl);
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
                 .bodyToFlux(GameCharacter.class)
                 .doOnNext(body -> log.info("Incoming response {} from {}: {{}}",
                         requestId, coreInstanceName, body))
-                .doOnComplete(() -> log.info("Incoming response {} from {{} : {}} was successfully received",
-                        requestId, coreInstanceName, coreBaseUrl))
+                .doOnComplete(() -> log.info("Incoming response {} from {} was successfully received",
+                        requestId, coreInstanceName))
                 .doOnError(exception ->
-                        log.error("Unable to process response {} from service {{} : {}}: {}",
-                                requestId, coreInstanceName, coreBaseUrl, exception));
+                        log.error("Unable to process response {} from server: {}", requestId, exception));
     }
 
     @Override
     public Mono<GameCharacter> saveGameCharacter(GameCharacter gameCharacter) {
-        var coreBaseUrl = getCoreBaseUrl();
+        String coreBaseUrl = Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
+                .map(ServiceInstance::getUri)
+                .map(URI::toString)
+                .orElseThrow(() ->
+                        new ServiceNotAvailableException(
+                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
 
-        var requestId = randomUUID().toString();
+        String requestId = UUID.randomUUID().toString();
 
         return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
                 .post()
@@ -87,206 +82,44 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .contentType(APPLICATION_JSON)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error(
-                            "Unable to get success response from service {{} : {}}: { request_id: {}, status_code: {}}",
-                            coreInstanceName, coreBaseUrl, requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
                 .bodyToMono(GameCharacter.class);
     }
 
     @Override
-    public Mono<Adventure> saveAdventure(Adventure adventure) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(String.format(ADVENTURE_FORMAT, coreBaseUrl))
-                .post()
-                .body(BodyInserters.fromObject(adventure))
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(Adventure.class)
-                .doOnSuccess(storedAdventure -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, storedAdventure));
-    }
-
-    @Override
-    public Mono<Adventure> getActiveAdventureByCharacterId(String gameCharacterId) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(
-                    String.format(ADVENTURE_FORMAT, coreBaseUrl)
-                        .concat("character/")
-                        .concat(gameCharacterId))
-                .get()
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(Adventure.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
-    }
-
-    @Override
-    public Mono<BattleInfo> saveBattleInfo(BattleInfo battleInfo) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(String.format(BATTLE_FORMAT, coreBaseUrl))
-                .post()
-                .body(BodyInserters.fromObject(battleInfo))
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(BattleInfo.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
-    }
-
-    @Override
-    public Mono<BattleInfo> getBattleInfoByCharacterId(String gameCharacterId) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(
-                String.format(BATTLE_FORMAT, coreBaseUrl)
-                        .concat("character/")
-                        .concat(gameCharacterId))
-                .get()
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(BattleInfo.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
-    }
-
-    @Override
-    public Mono<Monster> saveMonster(Monster monster) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(String.format(MONSTER_FORMAT, coreBaseUrl))
-                .post()
-                .body(BodyInserters.fromObject(monster))
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(Monster.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
-    }
-
-    @Override
-    public Mono<Void> deleteMonster(String id) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(
-                String.format(MONSTER_FORMAT, coreBaseUrl).concat(id))
-                .delete()
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(Void.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}}",
-                        coreInstanceName, coreBaseUrl));
-    }
-
-    @Override
-    public Mono<Monster> getMonsterById(String id) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(
-                String.format(MONSTER_FORMAT, coreBaseUrl).concat(id))
-                .get()
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(Monster.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
-    }
-
-    @Override
-    public Mono<Awards> saveAwards(Awards awards) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(
-                String.format(AWARDS_FORMAT, coreBaseUrl))
-                .post()
-                .body(BodyInserters.fromObject(awards))
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(Awards.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
-    }
-
-    @Override
-    public Mono<Awards> getAwardsById(String id) {
-        var coreBaseUrl = getCoreBaseUrl();
-
-        var requestId = randomUUID().toString();
-
-        return WebClient.create(
-                String.format(AWARDS_FORMAT, coreBaseUrl).concat(id))
-                .get()
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
-                .bodyToMono(Awards.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
-    }
-
-    private String getCoreBaseUrl() {
-        return Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
+    public Mono<GameEvent> getGameEventByCharacterId(String id) {
+        String coreBaseUrl = Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
                 .map(ServiceInstance::getUri)
                 .map(URI::toString)
                 .orElseThrow(() ->
                         new ServiceNotAvailableException(
                                 String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+
+        String requestId = UUID.randomUUID().toString();
+
+        return WebClient.create(String.format(GAME_EVENT_FORMAT, coreBaseUrl))
+                .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
+                .accept(APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(GameEvent.class);
+    }
+
+    @Override
+    public Mono<GameEvent> saveGameEvent(GameEvent gameEvent) {
+        String coreBaseUrl = Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
+                .map(ServiceInstance::getUri)
+                .map(URI::toString)
+                .orElseThrow(() ->
+                        new ServiceNotAvailableException(
+                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+
+        String requestId = UUID.randomUUID().toString();
+
+        return WebClient.create(String.format(GAME_EVENT_FORMAT, coreBaseUrl))
+                .post()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
+                .body(BodyInserters.fromObject(gameEvent))
+                .retrieve()
+                .bodyToMono(GameEvent.class);
     }
 }

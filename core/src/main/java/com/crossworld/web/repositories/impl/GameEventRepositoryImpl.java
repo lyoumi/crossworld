@@ -4,8 +4,10 @@ import com.crossworld.web.converters.ConverterService;
 import com.crossworld.web.dao.GameEventDao;
 import com.crossworld.web.data.GameEvent;
 import com.crossworld.web.repositories.GameEventRepository;
+
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 @Component
 public class GameEventRepositoryImpl implements GameEventRepository {
@@ -20,18 +22,14 @@ public class GameEventRepositoryImpl implements GameEventRepository {
     }
 
     @Override
-    public Mono<GameEvent> getCharacterEvent(String characterId) {
-        return gameEventDao.getEventEntityByGameCharacterId(characterId).map(converterService::convert);
+    public GameEvent getCharacterEvent(String characterId) {
+        return Optional.ofNullable(gameEventDao.getEventEntityByGameCharacterId(characterId))
+                .map(converterService::convert)
+                .orElse(null);
     }
 
     @Override
-    public Mono<GameEvent> saveGameEvent(GameEvent gameEvent) {
-        return gameEventDao.save(converterService.convert(gameEvent))
-                .map(converterService::convert);
-    }
-
-    @Override
-    public Mono<Void> deleteAll() {
-        return gameEventDao.deleteAll();
+    public GameEvent saveGameEvent(GameEvent gameEvent) {
+        return converterService.convert(gameEventDao.save(converterService.convert(gameEvent)));
     }
 }

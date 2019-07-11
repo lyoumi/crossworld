@@ -1,4 +1,4 @@
-package com.crossworld.web.data.character;
+package com.crossworld.web.data;
 
 import lombok.Data;
 
@@ -6,10 +6,7 @@ import lombok.Data;
 public class GameCharacter {
     private String id;
     private String name;
-    private boolean inAdventure;
-    private boolean isFighting;
-    private boolean isResting;
-    private String currentAction;
+    private boolean hasEvent;
     private CharacterProgress progress;
     private CharacterStats stats;
     private GameInventory gameInventory;

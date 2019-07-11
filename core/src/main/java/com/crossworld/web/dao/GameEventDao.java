@@ -1,10 +1,10 @@
 package com.crossworld.web.dao;
 
 import com.crossworld.web.entities.EventEntity;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import reactor.core.publisher.Mono;
 
-public interface GameEventDao extends ReactiveMongoRepository<EventEntity, String> {
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-    Mono<EventEntity> getEventEntityByGameCharacterId(String characterId);
+public interface GameEventDao extends MongoRepository<EventEntity, String> {
+
+    EventEntity getEventEntityByGameCharacterId(String characterId);
 }
