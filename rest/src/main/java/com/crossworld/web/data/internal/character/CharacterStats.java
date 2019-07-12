@@ -1,8 +1,12 @@
-package com.crossworld.web.data.internal;
+package com.crossworld.web.data.internal.character;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CharacterStats {
     private int power;
     private int agility;

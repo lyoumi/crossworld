@@ -1,7 +1,7 @@
 package com.crossworld.web.clients.impl;
 
 import com.crossworld.web.clients.CoreWebClient;
-import com.crossworld.web.data.internal.GameCharacter;
+import com.crossworld.web.data.internal.character.GameCharacter;
 import com.crossworld.web.exception.ServiceNotAvailableException;
 
 import lombok.RequiredArgsConstructor;
@@ -26,8 +26,8 @@ public class CoreWebClientImpl implements CoreWebClient {
     private static final String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
     private static final String REQUEST_ID_HEADER_NAME = "request_id";
 
-    private static final String USER_CHARACTER_FORMAT = "%s/private/core/character/user/%s/";
-    private static final String SAVE_CHARACTER_FORMAT = "%s/private/core/character/";
+    private static final String USER_CHARACTER_FORMAT = "%s/private/character/user/%s/";
+    private static final String SAVE_CHARACTER_FORMAT = "%s/private/character/";
 
     @Value("${services.core.instance.name}")
     private String coreInstanceName;

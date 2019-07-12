@@ -1,6 +1,6 @@
 package com.crossworld.web.clients;
 
-import com.crossworld.web.data.internal.GameCharacter;
+import com.crossworld.web.data.internal.character.GameCharacter;
 
 import reactor.core.publisher.Mono;
 

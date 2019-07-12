@@ -3,7 +3,10 @@ package com.crossworld.web.resources;
 import static java.util.UUID.randomUUID;
 
 import com.crossworld.web.data.input.PlayerCharacterInput;
-import com.crossworld.web.data.internal.GameCharacter;
+import com.crossworld.web.data.internal.character.CharacterProgress;
+import com.crossworld.web.data.internal.character.CharacterStats;
+import com.crossworld.web.data.internal.character.GameCharacter;
+import com.crossworld.web.data.internal.character.GameInventory;
 import com.crossworld.web.services.GameControllerService;
 
 import lombok.AllArgsConstructor;
@@ -26,7 +29,10 @@ public class GameControllerResource {
     public Mono<GameCharacter> createGameCharacter(@RequestBody PlayerCharacterInput playerCharacterInput) {
         return gameControllerService.saveCharacter(
                 new GameCharacter(randomUUID().toString(), playerCharacterInput.getName(),
-                        false, randomUUID().toString()));
+                        false, false, false, "",
+                        new CharacterProgress(0, 1, 100),
+                        new CharacterStats(10, 10, 10, 200, 100, 30),
+                        new GameInventory(), randomUUID().toString()));
     }
 
     @GetMapping("{user_id}")

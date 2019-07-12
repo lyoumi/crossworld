@@ -1,4 +1,4 @@
-package com.crossworld.web.data.internal;
+package com.crossworld.web.data.internal.character;
 
 import lombok.Data;
 
