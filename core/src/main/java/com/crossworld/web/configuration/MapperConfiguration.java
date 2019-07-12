@@ -1,5 +1,7 @@
 package com.crossworld.web.configuration;
 
+import com.crossworld.web.mappers.AdventureEntityToAdventureMapper;
+import com.crossworld.web.mappers.AdventureToAdventureEntityMapper;
 import com.crossworld.web.mappers.AwardsEntityToAwardsMapper;
 import com.crossworld.web.mappers.AwardsToAwardsEntityMapper;
 import com.crossworld.web.mappers.BattleEntityToBattleInfoMapper;
@@ -31,5 +33,7 @@ public class MapperConfiguration {
         converterRegistry.addConverter(Mappers.getMapper(MonsterEntityToMonsterMapper.class));
         converterRegistry.addConverter(Mappers.getMapper(BattleInfoToBattleEntityMapper.class));
         converterRegistry.addConverter(Mappers.getMapper(BattleEntityToBattleInfoMapper.class));
+        converterRegistry.addConverter(Mappers.getMapper(AdventureEntityToAdventureMapper.class));
+        converterRegistry.addConverter(Mappers.getMapper(AdventureToAdventureEntityMapper.class));
     }
 }
