@@ -31,6 +31,7 @@ public class AdventureEventProcessor implements EventProcessor {
                         } else {
                             finishAdventure(gameCharacter, adventure);
                         }
+                        coreWebClient.updateAdventure(adventure).subscribe();
                     });
 
             coreWebClient.saveGameCharacter(gameCharacter).subscribe();
@@ -42,14 +43,12 @@ public class AdventureEventProcessor implements EventProcessor {
         gameCharacter.setCurrentAction(FINISH_ADVENTURE_EVENT);
         adventure.setStatus(AdventureStatus.CLOSED);
 
-        coreWebClient.saveAdventure(adventure).subscribe();
-
         coreWebClient.getAwardsById(adventure.getAwardsId())
-            .subscribe(awards -> {
-                gameCharacter.getGameInventory()
-                        .setExperience(gameCharacter.getGameInventory().getExperience() + awards.getExperience());
-                gameCharacter.getGameInventory()
-                        .setGold(gameCharacter.getGameInventory().getGold() + awards.getGold());
-            });
+                .subscribe(awards -> {
+                    gameCharacter.getProgress()
+                            .setCurrentExp(gameCharacter.getProgress().getCurrentExp() + awards.getExperience());
+                    gameCharacter.getGameInventory()
+                            .setGold(gameCharacter.getGameInventory().getGold() + awards.getGold());
+                });
     }
 }

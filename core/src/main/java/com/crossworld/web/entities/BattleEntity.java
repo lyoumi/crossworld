@@ -8,12 +8,10 @@ import java.io.Serializable;
 
 @Data
 @Document
-public class AccountEntity implements Serializable {
+public class BattleEntity implements Serializable {
     @Id
     private String id;
-    private String name;
-    private String surname;
-    private String login;
-    private String password;
-
+    private String characterId;
+    private String monsterId;
+    private String awardsId;
 }

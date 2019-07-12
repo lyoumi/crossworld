@@ -110,8 +110,8 @@ public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcesso
 
         gameCharacter.setInAdventure(true);
 
-        coreWebClient.saveAdventure(adventure).subscribe();
-        coreWebClient.saveAwards(awards).subscribe();
+        coreWebClient.createAdventure(adventure).subscribe();
+        coreWebClient.createAwards(awards).subscribe();
     }
 
     private void generateRegenerationEvent(GameCharacter gameCharacter) {
@@ -129,8 +129,8 @@ public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcesso
 
         gameCharacter.setFighting(true);
 
-        coreWebClient.saveMonster(monster);
-        coreWebClient.saveBattleInfo(battleInfo);
-        coreWebClient.saveAwards(awards);
+        coreWebClient.createMonster(monster).subscribe();
+        coreWebClient.createBattleInfo(battleInfo).subscribe();
+        coreWebClient.createAwards(awards).subscribe();
     }
 }

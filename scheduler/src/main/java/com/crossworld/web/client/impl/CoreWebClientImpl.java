@@ -35,12 +35,12 @@ public class CoreWebClientImpl implements CoreWebClient {
     private static final String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
     private static final String REQUEST_ID_HEADER_NAME = "request_id";
 
-    private static final String ALL_CHARACTERS_FORMAT = "%s/private/core/character/all/";
-    private static final String SAVE_CHARACTER_FORMAT = "%s/private/core/character/";
-    private static final String ADVENTURE_FORMAT = "%s/private/core/adventure/";
-    private static final String BATTLE_FORMAT = "%s/private/core/battle/";
-    private static final String MONSTER_FORMAT = "%s/private/core/monster/";
-    private static final String AWARDS_FORMAT = "%s/private/core/awards/";
+    private static final String ALL_CHARACTERS_FORMAT = "%s/core/private/character/all/";
+    private static final String SAVE_CHARACTER_FORMAT = "%s/core/private/character/";
+    private static final String ADVENTURE_FORMAT = "%s/core/private/adventure/";
+    private static final String BATTLE_FORMAT = "%s/core/private/battle/";
+    private static final String MONSTER_FORMAT = "%s/core/private/monster/";
+    private static final String AWARDS_FORMAT = "%s/core/private/awards/";
 
     @Value("${services.core.instance.name}")
     private String coreInstanceName;
@@ -81,7 +81,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
-                .post()
+                .put()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_JSON)
                 .contentType(APPLICATION_JSON)
@@ -97,13 +97,33 @@ public class CoreWebClientImpl implements CoreWebClient {
     }
 
     @Override
-    public Mono<Adventure> saveAdventure(Adventure adventure) {
+    public Mono<Adventure> createAdventure(Adventure adventure) {
         var coreBaseUrl = getCoreBaseUrl();
 
         var requestId = randomUUID().toString();
 
         return WebClient.create(String.format(ADVENTURE_FORMAT, coreBaseUrl))
                 .post()
+                .body(BodyInserters.fromObject(adventure))
+                .retrieve()
+                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
+                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
+                            requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                })
+                .bodyToMono(Adventure.class)
+                .doOnSuccess(storedAdventure -> log.info("Incoming response from service {{} : {}} with body {}",
+                        coreInstanceName, coreBaseUrl, storedAdventure));
+    }
+
+    @Override
+    public Mono<Adventure> updateAdventure(Adventure adventure) {
+        var coreBaseUrl = getCoreBaseUrl();
+
+        var requestId = randomUUID().toString();
+
+        return WebClient.create(String.format(ADVENTURE_FORMAT, coreBaseUrl))
+                .put()
                 .body(BodyInserters.fromObject(adventure))
                 .retrieve()
                 .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
@@ -139,13 +159,33 @@ public class CoreWebClientImpl implements CoreWebClient {
     }
 
     @Override
-    public Mono<BattleInfo> saveBattleInfo(BattleInfo battleInfo) {
+    public Mono<BattleInfo> createBattleInfo(BattleInfo battleInfo) {
         var coreBaseUrl = getCoreBaseUrl();
 
         var requestId = randomUUID().toString();
 
         return WebClient.create(String.format(BATTLE_FORMAT, coreBaseUrl))
                 .post()
+                .body(BodyInserters.fromObject(battleInfo))
+                .retrieve()
+                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
+                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
+                            requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                })
+                .bodyToMono(BattleInfo.class)
+                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
+                        coreInstanceName, coreBaseUrl, responseBody));
+    }
+
+    @Override
+    public Mono<BattleInfo> updateBattleInfo(BattleInfo battleInfo) {
+        var coreBaseUrl = getCoreBaseUrl();
+
+        var requestId = randomUUID().toString();
+
+        return WebClient.create(String.format(BATTLE_FORMAT, coreBaseUrl))
+                .put()
                 .body(BodyInserters.fromObject(battleInfo))
                 .retrieve()
                 .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
@@ -181,13 +221,33 @@ public class CoreWebClientImpl implements CoreWebClient {
     }
 
     @Override
-    public Mono<Monster> saveMonster(Monster monster) {
+    public Mono<Monster> createMonster(Monster monster) {
         var coreBaseUrl = getCoreBaseUrl();
 
         var requestId = randomUUID().toString();
 
         return WebClient.create(String.format(MONSTER_FORMAT, coreBaseUrl))
                 .post()
+                .body(BodyInserters.fromObject(monster))
+                .retrieve()
+                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
+                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
+                            requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                })
+                .bodyToMono(Monster.class)
+                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
+                        coreInstanceName, coreBaseUrl, responseBody));
+    }
+
+    @Override
+    public Mono<Monster> updateMonster(Monster monster) {
+        var coreBaseUrl = getCoreBaseUrl();
+
+        var requestId = randomUUID().toString();
+
+        return WebClient.create(String.format(MONSTER_FORMAT, coreBaseUrl))
+                .put()
                 .body(BodyInserters.fromObject(monster))
                 .retrieve()
                 .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
@@ -241,7 +301,7 @@ public class CoreWebClientImpl implements CoreWebClient {
     }
 
     @Override
-    public Mono<Awards> saveAwards(Awards awards) {
+    public Mono<Awards> createAwards(Awards awards) {
         var coreBaseUrl = getCoreBaseUrl();
 
         var requestId = randomUUID().toString();

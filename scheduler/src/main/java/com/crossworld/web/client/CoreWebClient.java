@@ -13,16 +13,25 @@ public interface CoreWebClient {
     Flux<GameCharacter> getAllGameCharacters();
     Mono<GameCharacter> saveGameCharacter(GameCharacter gameCharacter);
 
-    Mono<Adventure> saveAdventure(Adventure adventure);
+    Mono<Adventure> createAdventure(Adventure adventure);
+
+    Mono<Adventure> updateAdventure(Adventure adventure);
+
     Mono<Adventure> getActiveAdventureByCharacterId(String gameCharacterId);
 
-    Mono<BattleInfo> saveBattleInfo(BattleInfo battleInfo);
+    Mono<BattleInfo> createBattleInfo(BattleInfo battleInfo);
+
+    Mono<BattleInfo> updateBattleInfo(BattleInfo battleInfo);
+
     Mono<BattleInfo> getBattleInfoByCharacterId(String characterId);
 
-    Mono<Monster> saveMonster(Monster monster);
+    Mono<Monster> createMonster(Monster monster);
     Mono<Monster> getMonsterById(String id);
+
+    Mono<Monster> updateMonster(Monster monster);
+
     Mono<Void> deleteMonster(String id);
 
-    Mono<Awards> saveAwards(Awards awards);
+    Mono<Awards> createAwards(Awards awards);
     Mono<Awards> getAwardsById(String id);
 }

@@ -2,23 +2,19 @@ package com.crossworld.web.repositories.impl;
 
 import com.crossworld.web.converters.ConverterService;
 import com.crossworld.web.dao.GameCharacterDao;
-import com.crossworld.web.data.GameCharacter;
+import com.crossworld.web.data.character.GameCharacter;
 import com.crossworld.web.repositories.GameCharacterRepository;
-
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@AllArgsConstructor
 @Component
 public class GameCharacterRepositoryImpl implements GameCharacterRepository {
 
     private final ConverterService converterService;
     private final GameCharacterDao gameCharacterDao;
-
-    public GameCharacterRepositoryImpl(ConverterService converterService, GameCharacterDao gameCharacterDao) {
-        this.converterService = converterService;
-        this.gameCharacterDao = gameCharacterDao;
-    }
 
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {

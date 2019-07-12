@@ -1,6 +1,7 @@
 package com.crossworld.web.entities;
 
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -8,11 +9,15 @@ import java.io.Serializable;
 @Data
 @Document
 public class GameCharacterEntity implements Serializable {
+    @Id
     private String id;
     private String name;
-    private boolean hasEvent;
-    private String userId;
+    private boolean inAdventure;
+    private boolean isFighting;
+    private boolean isResting;
+    private String currentAction;
     private CharacterProgressInfo progress;
-    private CharacterStatsInfo stats;
-    private GameInventoryInfo gameInventory;
+    private CharacterStatsData stats;
+    private GameInventoryData gameInventory;
+    private String userId;
 }

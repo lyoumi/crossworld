@@ -1,8 +1,7 @@
 package com.crossworld.web.dao;
 
 import com.crossworld.web.entities.AccountEntity;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
-
-public interface AccountDao extends MongoRepository<AccountEntity, String> {
+public interface AccountDao extends ReactiveMongoRepository<AccountEntity, String> {
 }

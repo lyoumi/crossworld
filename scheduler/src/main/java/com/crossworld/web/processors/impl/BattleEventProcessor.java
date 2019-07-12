@@ -42,7 +42,7 @@ public class BattleEventProcessor implements EventProcessor {
                             gameCharacter.setFighting(false);
                             coreWebClient.deleteMonster(monster.getId()).subscribe(
                                     aVoid -> coreWebClient.getAwardsById(battleInfo.getAwardsId())
-                                            .subscribe(awards -> collectAwards(gameInventory, awards))
+                                            .subscribe(awards -> collectAwards(gameCharacter, awards))
                             );
                         }
                     } else {
@@ -52,9 +52,9 @@ public class BattleEventProcessor implements EventProcessor {
                 });
     }
 
-    private void collectAwards(GameInventory gameInventory, Awards awards) {
-        gameInventory.setGold(gameInventory.getGold() + awards.getGold());
-        gameInventory.setExperience(gameInventory.getExperience() + awards.getExperience());
+    private void collectAwards(GameCharacter gameCharacter, Awards awards) {
+        gameCharacter.getGameInventory().setGold(gameCharacter.getGameInventory().getGold() + awards.getGold());
+        gameCharacter.getProgress().setCurrentExp(gameCharacter.getProgress().getCurrentExp() + awards.getExperience());
     }
 
     private boolean canFight(
