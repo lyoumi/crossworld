@@ -129,8 +129,10 @@ public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcesso
 
         gameCharacter.setFighting(true);
 
-        coreWebClient.createMonster(monster).subscribe();
-        coreWebClient.createBattleInfo(battleInfo).subscribe();
-        coreWebClient.createAwards(awards).subscribe();
+        coreWebClient.createMonster(monster).subscribe(m -> {
+            coreWebClient.createBattleInfo(battleInfo).subscribe(bI -> {
+                coreWebClient.createAwards(awards).subscribe();
+            });
+        });
     }
 }

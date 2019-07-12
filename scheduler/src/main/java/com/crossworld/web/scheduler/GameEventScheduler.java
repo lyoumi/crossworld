@@ -17,7 +17,7 @@ public class GameEventScheduler {
     private final GameCharacterService gameCharacterService;
     private final BaseGameCharacterProcessor baseGameCharacterProcessor;
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 1000000)
     public void scheduleGameEvent() {
         gameCharacterService.getAllGameCharacters()
                 .doOnError(throwable -> log.error("Something went wrong. Error during character processing.", throwable))

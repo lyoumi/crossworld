@@ -3,7 +3,6 @@ package com.crossworld.web.clients.impl;
 import com.crossworld.web.clients.CoreWebClient;
 import com.crossworld.web.data.internal.character.GameCharacter;
 import com.crossworld.web.exception.ServiceNotAvailableException;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,12 +35,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
     @Override
     public Mono<GameCharacter> getUserCharacter(String userId) {
-        String coreBaseUrl = Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
-                .map(ServiceInstance::getUri)
-                .map(URI::toString)
-                .orElseThrow(() ->
-                        new ServiceNotAvailableException(
-                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+        String coreBaseUrl = getCoreBaseUrl();
 
         String requestId = UUID.randomUUID().toString();
 
@@ -55,12 +49,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
     @Override
     public Mono<GameCharacter> saveUserCharacter(GameCharacter gameCharacter) {
-        String coreBaseUrl = Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
-                .map(ServiceInstance::getUri)
-                .map(URI::toString)
-                .orElseThrow(() ->
-                        new ServiceNotAvailableException(
-                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+        String coreBaseUrl = getCoreBaseUrl();
 
         String requestId = UUID.randomUUID().toString();
 
@@ -71,5 +60,14 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .retrieve()
                 .bodyToMono(GameCharacter.class)
                 .log();
+    }
+
+    private String getCoreBaseUrl() {
+        return Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
+                .map(ServiceInstance::getUri)
+                .map(URI::toString)
+                .orElseThrow(() ->
+                        new ServiceNotAvailableException(
+                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
     }
 }

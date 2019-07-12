@@ -1,15 +1,23 @@
 package com.crossworld.web.client.impl;
 
+import static com.crossworld.web.logging.LoggingTemplates.INCOMING_RESPONSE;
+import static com.crossworld.web.logging.LoggingTemplates.UNABLE_TO_GET_SUCCESS_RESPONSE;
+import static com.crossworld.web.logging.LoggingTemplates.UNABLE_TO_READ_RESPONSE;
+import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 
 import com.crossworld.web.client.CoreWebClient;
+import com.crossworld.web.data.character.GameCharacter;
 import com.crossworld.web.data.events.adventure.Adventure;
 import com.crossworld.web.data.events.awards.Awards;
 import com.crossworld.web.data.events.battle.BattleInfo;
 import com.crossworld.web.data.events.battle.Monster;
-import com.crossworld.web.data.character.GameCharacter;
+import com.crossworld.web.exception.MessageNotReadableException;
 import com.crossworld.web.exception.ServiceCommunicationException;
 import com.crossworld.web.exception.ServiceNotAvailableException;
 import lombok.RequiredArgsConstructor;
@@ -32,15 +40,17 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CoreWebClientImpl implements CoreWebClient {
 
-    private static final String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
-    private static final String REQUEST_ID_HEADER_NAME = "request_id";
+    private static String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
+    private static String INTERNAL_COMMUNICATION_EXCEPTION = "Internal communication exception";
 
-    private static final String ALL_CHARACTERS_FORMAT = "%s/private/character/all/";
-    private static final String SAVE_CHARACTER_FORMAT = "%s/private/character/";
-    private static final String ADVENTURE_FORMAT = "%s/private/adventure/";
-    private static final String BATTLE_FORMAT = "%s/private/battle/";
-    private static final String MONSTER_FORMAT = "%s/private/monster/";
-    private static final String AWARDS_FORMAT = "%s/private/awards/";
+    private static String REQUEST_ID_HEADER_NAME = "request_id";
+
+    private static String ALL_CHARACTERS_FORMAT = "%s/private/character/all/";
+    private static String SAVE_CHARACTER_FORMAT = "%s/private/character/";
+    private static String ADVENTURE_FORMAT = "%s/private/adventure/";
+    private static String BATTLE_FORMAT = "%s/private/battle/";
+    private static String MONSTER_FORMAT = "%s/private/monster/";
+    private static String AWARDS_FORMAT = "%s/private/awards/";
 
     @Value("${services.core.instance.name}")
     private String coreInstanceName;
@@ -53,25 +63,22 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(ALL_CHARACTERS_FORMAT, coreBaseUrl))
+        String url = format(ALL_CHARACTERS_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .get()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_STREAM_JSON)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error(
-                            "Unable to get success response: { request_id: {}, status_code: {}} from service {{} : {}}",
-                            requestId, clientResponse.statusCode(), coreInstanceName, coreBaseUrl);
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToFlux(GameCharacter.class)
-                .doOnNext(body -> log.info("Incoming response {} from {}: {{}}",
-                        requestId, coreInstanceName, body))
-                .doOnComplete(() -> log.info("Incoming response {} from {{} : {}} was successfully received",
-                        requestId, coreInstanceName, coreBaseUrl))
+                .doOnNext(body -> log.info(INCOMING_RESPONSE, requestId, GET, url, body))
                 .doOnError(exception ->
                         log.error("Unable to process response {} from service {{} : {}}: {}",
-                                requestId, coreInstanceName, coreBaseUrl, exception));
+                                requestId, GET, url, exception));
     }
 
     @Override
@@ -80,19 +87,17 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
+        String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .put()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
-                .accept(APPLICATION_JSON)
-                .contentType(APPLICATION_JSON)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error(
-                            "Unable to get success response from service {{} : {}}: { request_id: {}, status_code: {}}",
-                            coreInstanceName, coreBaseUrl, requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(GameCharacter.class);
     }
 
@@ -102,18 +107,22 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(ADVENTURE_FORMAT, coreBaseUrl))
+        String url = format(ADVENTURE_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .post()
                 .body(BodyInserters.fromObject(adventure))
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
+                                    clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Adventure.class)
-                .doOnSuccess(storedAdventure -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, storedAdventure));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
+                .doOnSuccess(storedAdventure -> log.info(INCOMING_RESPONSE, requestId, POST, url, storedAdventure));
     }
 
     @Override
@@ -122,18 +131,21 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(ADVENTURE_FORMAT, coreBaseUrl))
+        String url = format(ADVENTURE_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .put()
                 .body(BodyInserters.fromObject(adventure))
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Adventure.class)
-                .doOnSuccess(storedAdventure -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, storedAdventure));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))))
+                .doOnSuccess(storedAdventure -> log.info(INCOMING_RESPONSE, requestId, PUT, url, storedAdventure));
     }
 
     @Override
@@ -142,20 +154,22 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(
-                    String.format(ADVENTURE_FORMAT, coreBaseUrl)
-                        .concat("character/")
-                        .concat(gameCharacterId))
+        String url = format(ADVENTURE_FORMAT, coreBaseUrl)
+                .concat("character/")
+                .concat(gameCharacterId);
+        return WebClient.create(url)
                 .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Adventure.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
     }
 
     @Override
@@ -164,18 +178,22 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(BATTLE_FORMAT, coreBaseUrl))
+        String url = format(BATTLE_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .post()
                 .body(BodyInserters.fromObject(battleInfo))
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
+                                    clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(BattleInfo.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, url, responseBody));
     }
 
     @Override
@@ -184,18 +202,21 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(BATTLE_FORMAT, coreBaseUrl))
+        String url = format(BATTLE_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .put()
                 .body(BodyInserters.fromObject(battleInfo))
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(BattleInfo.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, PUT, url, responseBody));
     }
 
     @Override
@@ -204,20 +225,22 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(
-                String.format(BATTLE_FORMAT, coreBaseUrl)
-                        .concat("character/")
-                        .concat(gameCharacterId))
+        String url = format(BATTLE_FORMAT, coreBaseUrl)
+                .concat("character/")
+                .concat(gameCharacterId);
+        return WebClient.create(url)
                 .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(BattleInfo.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
     }
 
     @Override
@@ -226,18 +249,22 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(MONSTER_FORMAT, coreBaseUrl))
+        String url = format(MONSTER_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .post()
                 .body(BodyInserters.fromObject(monster))
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
+                                    clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Monster.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, url, responseBody));
     }
 
     @Override
@@ -246,18 +273,21 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(String.format(MONSTER_FORMAT, coreBaseUrl))
+        String url = format(MONSTER_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .put()
                 .body(BodyInserters.fromObject(monster))
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Monster.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, PUT, url, responseBody));
     }
 
     @Override
@@ -266,18 +296,17 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(
-                String.format(MONSTER_FORMAT, coreBaseUrl).concat(id))
+        String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
+        return WebClient.create(url)
                 .delete()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
+                    log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, DELETE, url, requestId, clientResponse.statusCode());
+                    return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
                 })
                 .bodyToMono(Void.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}}",
-                        coreInstanceName, coreBaseUrl));
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, DELETE, url, null));
     }
 
     @Override
@@ -286,18 +315,20 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(
-                String.format(MONSTER_FORMAT, coreBaseUrl).concat(id))
+        String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
+        return WebClient.create(url)
                 .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Monster.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
     }
 
     @Override
@@ -306,19 +337,22 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(
-                String.format(AWARDS_FORMAT, coreBaseUrl))
+        String url = format(AWARDS_FORMAT, coreBaseUrl);
+        return WebClient.create(url)
                 .post()
                 .body(BodyInserters.fromObject(awards))
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
+                                    clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Awards.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, coreBaseUrl, responseBody));
     }
 
     @Override
@@ -327,18 +361,20 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         var requestId = randomUUID().toString();
 
-        return WebClient.create(
-                String.format(AWARDS_FORMAT, coreBaseUrl).concat(id))
+        String url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
+        return WebClient.create(url)
                 .get()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error("Unable to get success response: { request_id: {}, status_code: {}}",
-                            requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException("Internal communication exception"));
-                })
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
                 .bodyToMono(Awards.class)
-                .doOnSuccess(responseBody -> log.info("Incoming response from service {{} : {}} with body {}",
-                        coreInstanceName, coreBaseUrl, responseBody));
+                .switchIfEmpty(Mono.error(new MessageNotReadableException(
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, coreBaseUrl, responseBody));
     }
 
     private String getCoreBaseUrl() {
@@ -347,6 +383,6 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .map(URI::toString)
                 .orElseThrow(() ->
                         new ServiceNotAvailableException(
-                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+                                format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
     }
 }
