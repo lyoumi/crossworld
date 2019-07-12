@@ -35,12 +35,12 @@ public class CoreWebClientImpl implements CoreWebClient {
     private static final String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
     private static final String REQUEST_ID_HEADER_NAME = "request_id";
 
-    private static final String ALL_CHARACTERS_FORMAT = "%s/core/private/character/all/";
-    private static final String SAVE_CHARACTER_FORMAT = "%s/core/private/character/";
-    private static final String ADVENTURE_FORMAT = "%s/core/private/adventure/";
-    private static final String BATTLE_FORMAT = "%s/core/private/battle/";
-    private static final String MONSTER_FORMAT = "%s/core/private/monster/";
-    private static final String AWARDS_FORMAT = "%s/core/private/awards/";
+    private static final String ALL_CHARACTERS_FORMAT = "%s/private/character/all/";
+    private static final String SAVE_CHARACTER_FORMAT = "%s/private/character/";
+    private static final String ADVENTURE_FORMAT = "%s/private/adventure/";
+    private static final String BATTLE_FORMAT = "%s/private/battle/";
+    private static final String MONSTER_FORMAT = "%s/private/monster/";
+    private static final String AWARDS_FORMAT = "%s/private/awards/";
 
     @Value("${services.core.instance.name}")
     private String coreInstanceName;
