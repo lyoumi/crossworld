@@ -3,6 +3,7 @@ package com.crossworld.web.repositories.impl;
 import com.crossworld.web.converters.ConverterService;
 import com.crossworld.web.dao.AdventureDao;
 import com.crossworld.web.data.events.adventure.Adventure;
+import com.crossworld.web.data.events.adventure.AdventureStatus;
 import com.crossworld.web.repositories.AdventureRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,13 @@ public class AdventureRepositoryImpl implements AdventureRepository {
     public Mono<Adventure> getAdventureByCharacterId(String characterId) {
         return adventureDao
                 .findAdventureEntityByCharacterId(characterId)
+                .map(converterService::convert);
+    }
+
+    @Override
+    public Mono<Adventure> getActiveAdventureByCharacterId(String characterId) {
+        return adventureDao
+                .findAdventureEntityByStatusAndCharacterId(AdventureStatus.IN_PROGRESS.name(), characterId)
                 .map(converterService::convert);
     }
 

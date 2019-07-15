@@ -34,4 +34,8 @@ public interface CoreWebClient {
 
     Mono<Awards> createAwards(Awards awards);
     Mono<Awards> getAwardsById(String id);
+
+    Mono<Void> deleteBattleInfo(String id);
+
+    Mono<Void> deleteAwards(String id);
 }

@@ -9,7 +9,7 @@ import com.crossworld.web.data.events.battle.BattleInfo;
 import com.crossworld.web.data.events.battle.Monster;
 import com.crossworld.web.data.events.battle.MonsterType;
 import com.crossworld.web.data.character.GameCharacter;
-import com.crossworld.web.processors.BaseGameCharacterProcessor;
+import com.crossworld.web.processors.BaseEventProcessor;
 import com.crossworld.web.processors.EventProcessor;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
-public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcessor {
+public class BaseEventProcessorImpl implements BaseEventProcessor {
 
     private static final Random RANDOM = new Random();
 
@@ -42,7 +42,7 @@ public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcesso
 
     private final CoreWebClient coreWebClient;
 
-    public BaseGameCharacterProcessorImpl(CoreWebClient coreWebClient,
+    public BaseEventProcessorImpl(CoreWebClient coreWebClient,
             EventProcessor battleEventProcessor,
             EventProcessor adventureEventProcessor,
             EventProcessor healingEventProcessor) {
@@ -93,7 +93,7 @@ public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcesso
         missingEvents.forEach(eventType -> {
             var eventGenerationRestrictions = EVENT_GENERATION_RESTRICTION_MAP.get(eventType);
             if (eventGenerationRestrictions.containsAll(activeEvents)
-                    && activeEvents.containsAll(eventGenerationRestrictions)) {
+                    && activeEvents.containsAll(eventGenerationRestrictions) && RANDOM.nextBoolean()) {
                 eventGenerator.get(eventType).accept(gc);
                 coreWebClient.saveGameCharacter(gc).subscribe();
             }
@@ -115,7 +115,7 @@ public class BaseGameCharacterProcessorImpl implements BaseGameCharacterProcesso
     }
 
     private void generateRegenerationEvent(GameCharacter gameCharacter) {
-
+        //TODO: implement regeneration generation
     }
 
     private void generateBattle(GameCharacter gameCharacter) {

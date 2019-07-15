@@ -11,6 +11,8 @@ public interface AdventureRepository {
 
     Mono<Adventure> getAdventureByCharacterId(String characterId);
 
+    Mono<Adventure> getActiveAdventureByCharacterId(String characterId);
+
     Mono<Void> deleteAdventure(String id);
 
     Mono<Void> deleteAdventureByCharacterId(String characterId);

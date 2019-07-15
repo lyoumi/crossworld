@@ -1,9 +1,9 @@
 package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
-import com.crossworld.web.data.events.adventure.AdventureStatus;
-import com.crossworld.web.data.events.adventure.Adventure;
 import com.crossworld.web.data.character.GameCharacter;
+import com.crossworld.web.data.events.adventure.Adventure;
+import com.crossworld.web.data.events.adventure.AdventureStatus;
 import com.crossworld.web.processors.EventProcessor;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ public class AdventureEventProcessor implements EventProcessor {
     private void processAdventure(GameCharacter gameCharacter) {
         if (!gameCharacter.isFighting()) {
             coreWebClient.getActiveAdventureByCharacterId(gameCharacter.getId())
-                    .subscribe(adventure -> {
+                    .doOnSuccess(adventure -> {
                         var currentEventStep = adventure.getStep();
                         if (currentEventStep < adventure.getAdventureEvents().size()) {
                             gameCharacter.setCurrentAction(adventure.getAdventureEvents().get(currentEventStep));
@@ -31,10 +31,10 @@ public class AdventureEventProcessor implements EventProcessor {
                         } else {
                             finishAdventure(gameCharacter, adventure);
                         }
-                        coreWebClient.updateAdventure(adventure).subscribe();
-                    });
-
-            coreWebClient.saveGameCharacter(gameCharacter).subscribe();
+                    })
+                    .doOnSuccess(coreWebClient::updateAdventure)
+                    .then(coreWebClient.saveGameCharacter(gameCharacter))
+                    .subscribe();
         }
     }
 
@@ -44,11 +44,13 @@ public class AdventureEventProcessor implements EventProcessor {
         adventure.setStatus(AdventureStatus.CLOSED);
 
         coreWebClient.getAwardsById(adventure.getAwardsId())
-                .subscribe(awards -> {
+                .doOnSuccess(awards -> {
                     gameCharacter.getProgress()
                             .setCurrentExp(gameCharacter.getProgress().getCurrentExp() + awards.getExperience());
                     gameCharacter.getGameInventory()
                             .setGold(gameCharacter.getGameInventory().getGold() + awards.getGold());
-                });
+                })
+                .doOnSuccess(awards -> coreWebClient.deleteAwards(awards.getId()))
+                .subscribe();
     }
 }

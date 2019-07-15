@@ -51,6 +51,18 @@ public class AdventureResource {
                         requestId, characterId, throwable));
     }
 
+    @ResponseStatus(OK)
+    @GetMapping(value = "active/character/{character_id}")
+    public Mono<Adventure> getActiveAdventureByCharacterId(
+            @RequestHeader(value = "request_id") String requestId,
+            @PathVariable(value = "character_id") String characterId) {
+        return adventureRepository
+                .getActiveAdventureByCharacterId(characterId)
+                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
+                .doOnError(throwable -> log.error("Unable to get adventure { request_id: {}, character_id: {} }",
+                        requestId, characterId, throwable));
+    }
+
     @ResponseStatus(CREATED)
     @PostMapping
     public Mono<Adventure> createAdventure(

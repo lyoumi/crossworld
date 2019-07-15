@@ -2,15 +2,15 @@ package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.character.CharacterStats;
-import com.crossworld.web.data.events.awards.Awards;
-import com.crossworld.web.data.events.battle.Monster;
-import com.crossworld.web.data.events.battle.BattleInfo;
 import com.crossworld.web.data.character.GameCharacter;
 import com.crossworld.web.data.character.GameInventory;
+import com.crossworld.web.data.events.awards.Awards;
+import com.crossworld.web.data.events.battle.BattleInfo;
+import com.crossworld.web.data.events.battle.Monster;
 import com.crossworld.web.processors.EventProcessor;
-
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 @Component("battleEventProcessor")
 @AllArgsConstructor
@@ -25,31 +25,43 @@ public class BattleEventProcessor implements EventProcessor {
 
     private void processFight(GameCharacter gameCharacter) {
         coreWebClient.getBattleInfoByCharacterId(gameCharacter.getId())
-                .subscribe(battleInfo -> processBattle(battleInfo, gameCharacter));
-
-        coreWebClient.saveGameCharacter(gameCharacter).subscribe();
+                .subscribe(battleInfo ->
+                        processBattle(battleInfo, gameCharacter)
+                        .subscribe(gc ->
+                                coreWebClient
+                                        .saveGameCharacter(gc)
+                                        .subscribe())
+                );
     }
 
-    private void processBattle(BattleInfo battleInfo, GameCharacter gameCharacter) {
-        coreWebClient.getMonsterById(battleInfo.getMonsterId())
-                .subscribe(monster -> {
+    private Mono<GameCharacter> processBattle(BattleInfo battleInfo, GameCharacter gameCharacter) {
+        return coreWebClient.getMonsterById(battleInfo.getMonsterId())
+                .doOnSuccess(monster -> {
                     var characterStats = gameCharacter.getStats();
                     final GameInventory gameInventory = gameCharacter.getGameInventory();
                     if (canFight(gameCharacter, characterStats, gameInventory, monster)) {
                         characterStats.setHitPoints(characterStats.getHitPoints() - monster.getAttack());
                         monster.setHitPoints(monster.getHitPoints() - characterStats.getAttack());
                         if (monster.getHitPoints() < 1) {
-                            gameCharacter.setFighting(false);
-                            coreWebClient.deleteMonster(monster.getId()).subscribe(
-                                    aVoid -> coreWebClient.getAwardsById(battleInfo.getAwardsId())
-                                            .subscribe(awards -> collectAwards(gameCharacter, awards))
-                            );
+                            removeMonster(gameCharacter, monster.getId(), battleInfo.getId());
+                            coreWebClient.getAwardsById(battleInfo.getAwardsId())
+                                    .subscribe(awards -> {
+                                        collectAwards(gameCharacter, awards);
+                                    });
+                        } else {
+                            coreWebClient.updateMonster(monster).subscribe();
                         }
                     } else {
-                        gameCharacter.setFighting(false);
-                        coreWebClient.deleteMonster(monster.getId());
+                        removeMonster(gameCharacter, monster.getId(), battleInfo.getId());
                     }
-                });
+                })
+        .thenReturn(gameCharacter);
+    }
+
+    private void removeMonster(GameCharacter gameCharacter, String monsterId, String battleId) {
+        gameCharacter.setFighting(false);
+        coreWebClient.deleteBattleInfo(battleId).subscribe();
+        coreWebClient.deleteMonster(monsterId).subscribe();
     }
 
     private void collectAwards(GameCharacter gameCharacter, Awards awards) {

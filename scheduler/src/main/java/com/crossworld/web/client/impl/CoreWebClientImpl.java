@@ -155,7 +155,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ADVENTURE_FORMAT, coreBaseUrl)
-                .concat("character/")
+                .concat("active/character/")
                 .concat(gameCharacterId);
         return WebClient.create(url)
                 .get()
@@ -241,6 +241,27 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
                         format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
                 .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
+    }
+
+    @Override
+    public Mono<Void> deleteBattleInfo(String id) {
+        var coreBaseUrl = getCoreBaseUrl();
+
+        var requestId = randomUUID().toString();
+
+        String url = format(BATTLE_FORMAT, coreBaseUrl).concat(id);
+
+        return WebClient.create(url)
+                .delete()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
+                .retrieve()
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
+                .bodyToMono(Void.class)
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, DELETE, url, null));
     }
 
     @Override
@@ -352,7 +373,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .bodyToMono(Awards.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
                         format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, coreBaseUrl, responseBody));
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, url, responseBody));
     }
 
     @Override
@@ -374,7 +395,27 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .bodyToMono(Awards.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
                         format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, coreBaseUrl, responseBody));
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
+    }
+
+    @Override
+    public Mono<Void> deleteAwards(String id) {
+        var coreBaseUrl = getCoreBaseUrl();
+
+        var requestId = randomUUID().toString();
+
+        var url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
+        return WebClient.create(url)
+                .delete()
+                .header(REQUEST_ID_HEADER_NAME, requestId)
+                .retrieve()
+                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
+                        clientResponse -> {
+                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
+                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
+                        })
+                .bodyToMono(Void.class)
+                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, DELETE, url, null));
     }
 
     private String getCoreBaseUrl() {
