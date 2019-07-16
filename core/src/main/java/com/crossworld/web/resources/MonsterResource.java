@@ -29,7 +29,6 @@ public class MonsterResource {
             @PathVariable(value = "id") String id) {
         return monsterRepository
                 .getMonsterById(id)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to get monster { request_id: {}, monster_id: {} }",
                                 requestId, id, throwable));
     }
@@ -40,7 +39,6 @@ public class MonsterResource {
             @RequestBody Monster monster) {
         return monsterRepository
                 .saveMonster(monster)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to create monster { request_id: {}, request_body: {} }",
                         requestId, monster, throwable));
     }
@@ -51,7 +49,6 @@ public class MonsterResource {
             @RequestBody Monster monster) {
         return monsterRepository
                 .saveMonster(monster)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to create monster { request_id: {}, request_body: {} }",
                                 requestId, monster, throwable));
     }
@@ -62,7 +59,6 @@ public class MonsterResource {
             @PathVariable(value = "id") String id) {
         return monsterRepository
                 .deleteMonster(id)
-                .doOnSuccess(aVoid -> log.info("Outgoing response {}", requestId))
                 .doOnError(throwable -> log.error("Unable to delete monster { request_id: {}, monster_id: {} }",
                         requestId, id, throwable));
     }

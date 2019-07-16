@@ -22,8 +22,6 @@ public class AdminGameCharacterResource {
     @ResponseStatus(NO_CONTENT)
     @DeleteMapping(value = "character/delete")
     public Mono<Void> deleteAllCharacters() {
-        return gameCharacterRepository
-                .deleteAll()
-                .doOnSuccess(aVoid -> log.info("All characters was successfully deleted"));
+        return gameCharacterRepository.deleteAll();
     }
 }

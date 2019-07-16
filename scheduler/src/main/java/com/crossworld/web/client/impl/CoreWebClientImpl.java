@@ -1,6 +1,5 @@
 package com.crossworld.web.client.impl;
 
-import static com.crossworld.web.logging.LoggingTemplates.INCOMING_RESPONSE;
 import static com.crossworld.web.logging.LoggingTemplates.UNABLE_TO_GET_SUCCESS_RESPONSE;
 import static com.crossworld.web.logging.LoggingTemplates.UNABLE_TO_READ_RESPONSE;
 import static java.lang.String.format;
@@ -20,6 +19,7 @@ import com.crossworld.web.data.events.battle.Monster;
 import com.crossworld.web.exception.MessageNotReadableException;
 import com.crossworld.web.exception.ServiceCommunicationException;
 import com.crossworld.web.exception.ServiceNotAvailableException;
+import com.crossworld.web.filters.LoggingFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,6 +56,7 @@ public class CoreWebClientImpl implements CoreWebClient {
     private String coreInstanceName;
 
     private final LoadBalancerClient loadBalancerClient;
+    private final LoggingFilter loggingFilter;
 
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {
@@ -64,7 +65,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ALL_CHARACTERS_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+
+        return buildWebClient(requestId, url)
                 .get()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_STREAM_JSON)
@@ -75,7 +77,6 @@ public class CoreWebClientImpl implements CoreWebClient {
                             return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
                         })
                 .bodyToFlux(GameCharacter.class)
-                .doOnNext(body -> log.info(INCOMING_RESPONSE, requestId, GET, url, body))
                 .doOnError(exception ->
                         log.error("Unable to process response {} from service {{} : {}}: {}",
                                 requestId, GET, url, exception));
@@ -88,9 +89,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .put()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
@@ -108,10 +108,9 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ADVENTURE_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .post()
                 .body(BodyInserters.fromObject(adventure))
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -121,8 +120,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Adventure.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
-                .doOnSuccess(storedAdventure -> log.info(INCOMING_RESPONSE, requestId, POST, url, storedAdventure));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
     }
 
     @Override
@@ -132,10 +130,9 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ADVENTURE_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .put()
                 .body(BodyInserters.fromObject(adventure))
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -144,8 +141,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Adventure.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))))
-                .doOnSuccess(storedAdventure -> log.info(INCOMING_RESPONSE, requestId, PUT, url, storedAdventure));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))));
     }
 
     @Override
@@ -157,9 +153,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         String url = format(ADVENTURE_FORMAT, coreBaseUrl)
                 .concat("active/character/")
                 .concat(gameCharacterId);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .get()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -168,8 +163,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Adventure.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
     }
 
     @Override
@@ -179,10 +173,9 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(BATTLE_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .post()
                 .body(BodyInserters.fromObject(battleInfo))
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -192,8 +185,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(BattleInfo.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
     }
 
     @Override
@@ -203,10 +195,9 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(BATTLE_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .put()
                 .body(BodyInserters.fromObject(battleInfo))
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -215,8 +206,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(BattleInfo.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, PUT, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))));
     }
 
     @Override
@@ -228,9 +218,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         String url = format(BATTLE_FORMAT, coreBaseUrl)
                 .concat("character/")
                 .concat(gameCharacterId);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .get()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -239,8 +228,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(BattleInfo.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
     }
 
     @Override
@@ -251,17 +239,15 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         String url = format(BATTLE_FORMAT, coreBaseUrl).concat(id);
 
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .delete()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
                             log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
                             return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
                         })
-                .bodyToMono(Void.class)
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, DELETE, url, null));
+                .bodyToMono(Void.class);
     }
 
     @Override
@@ -271,10 +257,9 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .post()
                 .body(BodyInserters.fromObject(monster))
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -284,8 +269,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Monster.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
     }
 
     @Override
@@ -295,10 +279,9 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .put()
                 .body(BodyInserters.fromObject(monster))
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -307,8 +290,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Monster.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, PUT, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))));
     }
 
     @Override
@@ -318,16 +300,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .delete()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
                     log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, DELETE, url, requestId, clientResponse.statusCode());
                     return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
                 })
-                .bodyToMono(Void.class)
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, DELETE, url, null));
+                .bodyToMono(Void.class);
     }
 
     @Override
@@ -337,9 +317,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .get()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -348,8 +327,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Monster.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
     }
 
     @Override
@@ -359,10 +337,9 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(AWARDS_FORMAT, coreBaseUrl);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .post()
                 .body(BodyInserters.fromObject(awards))
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -372,8 +349,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Awards.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, POST, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
     }
 
     @Override
@@ -383,9 +359,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .get()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
@@ -394,8 +369,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                         })
                 .bodyToMono(Awards.class)
                 .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))))
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, GET, url, responseBody));
+                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
     }
 
     @Override
@@ -405,17 +379,23 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         var url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
-        return WebClient.create(url)
+        return buildWebClient(requestId, url)
                 .delete()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
                         clientResponse -> {
                             log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
                             return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
                         })
-                .bodyToMono(Void.class)
-                .doOnSuccess(responseBody -> log.info(INCOMING_RESPONSE, requestId, DELETE, url, null));
+                .bodyToMono(Void.class);
+    }
+
+    private WebClient buildWebClient(String requestId, String url) {
+        return WebClient.builder()
+                .filter(loggingFilter)
+                .baseUrl(url)
+                .defaultHeaders(httpHeaders -> httpHeaders.add(REQUEST_ID_HEADER_NAME, requestId))
+                .build();
     }
 
     private String getCoreBaseUrl() {

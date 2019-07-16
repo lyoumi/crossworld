@@ -34,8 +34,6 @@ public class GameCharacterResource {
             @RequestHeader(value = "request_id") String requestId,
             @PathVariable("user_id") String userId) {
         return gameCharacterRepository.getUsersCharacter(userId)
-                .doOnSuccess(character -> log.info("Outgoing response { request_id: {} } with body {}",
-                                requestId, character))
                 .doOnError(throwable -> log.error("Unable to get game character by user_id: { user_id: {}, request_id: {} }",
                                 userId, requestId, throwable));
     }
@@ -46,8 +44,6 @@ public class GameCharacterResource {
             @RequestHeader(value = "request_id") String requestId,
             @RequestBody GameCharacter gameCharacter) {
         return gameCharacterRepository.save(gameCharacter)
-                .doOnSuccess(character -> log.info("Outgoing response { request_id: {} } with body {}",
-                                requestId, character))
                 .doOnError(throwable -> log.error("Unable to store game character: { body: {}, request_id: {} }",
                                 gameCharacter, requestId, throwable));
 
@@ -59,8 +55,6 @@ public class GameCharacterResource {
             @RequestHeader(value = "request_id") String requestId,
             @RequestBody GameCharacter gameCharacter) {
         return gameCharacterRepository.save(gameCharacter)
-                .doOnSuccess(character -> log.info("Outgoing response { request_id: {} } with body {}",
-                                requestId, character))
                 .doOnError(throwable -> log.error("Unable to store game character: { body: {}, request_id: {} }",
                                 gameCharacter, requestId, throwable));
 
@@ -71,9 +65,6 @@ public class GameCharacterResource {
     public Flux<GameCharacter> getAllGameCharacters(
             @RequestHeader(value = "request_id") String requestId) {
         return gameCharacterRepository.getAllGameCharacters()
-                .doOnNext(gameCharacter -> log.info("Outgoing response { request_id: {} } part with body: {}",
-                                requestId, gameCharacter))
-                .doOnComplete(() -> log.info("Outgoing response { request_id: {} } successfully sent", requestId))
                 .doOnError(throwable -> log.error("Unable to get all game characters", throwable));
     }
 }

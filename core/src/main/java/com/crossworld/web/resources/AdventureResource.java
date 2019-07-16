@@ -58,7 +58,6 @@ public class AdventureResource {
             @PathVariable(value = "character_id") String characterId) {
         return adventureRepository
                 .getActiveAdventureByCharacterId(characterId)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to get adventure { request_id: {}, character_id: {} }",
                         requestId, characterId, throwable));
     }
@@ -70,7 +69,6 @@ public class AdventureResource {
             @RequestBody Adventure adventure) {
         return adventureRepository
                 .saveAdventure(adventure)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to create adventure { request_id: {}, request_body: {} }",
                         requestId, adventure, throwable));
     }
@@ -82,7 +80,6 @@ public class AdventureResource {
             @PathVariable(value = "id") String id) {
         return adventureRepository
                 .deleteAdventure(id)
-                .doOnSuccess(aVoid -> log.info("Outgoing response {}", requestId))
                 .doOnError(throwable -> log.error("Unable to get adventure { request_id: {}, adventure_id: {} }",
                         requestId, id, throwable));
     }
@@ -94,7 +91,6 @@ public class AdventureResource {
             @PathVariable(value = "character_id") String characterId) {
         return adventureRepository
                 .deleteAdventureByCharacterId(characterId)
-                .doOnSuccess(aVoid -> log.info("Outgoing response {}", requestId))
                 .doOnError(throwable -> log.error("Unable to get adventure { request_id: {}, character_id: {} }",
                         requestId, characterId, throwable));
     }

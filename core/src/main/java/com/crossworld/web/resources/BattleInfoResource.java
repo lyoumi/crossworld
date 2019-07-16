@@ -34,7 +34,6 @@ public class BattleInfoResource {
             @PathVariable(value = "id") String id) {
         return battleInfoRepository
                 .getBattleInfoById(id)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to get battle info { request_id: {}, battle_id: {} }",
                         requestId, id, throwable));
     }
@@ -46,7 +45,6 @@ public class BattleInfoResource {
             @PathVariable(value = "character_id") String characterId) {
         return battleInfoRepository
                 .getBattleInfoByCharacterId(characterId)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to get battle info { request_id: {}, character_id: {} }",
                         requestId, characterId, throwable));
     }
@@ -58,7 +56,6 @@ public class BattleInfoResource {
             @RequestBody BattleInfo battleInfo) {
         return battleInfoRepository
                 .saveBattleInfo(battleInfo)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to create battle info { request_id: {}, request_body: {} }",
                         requestId, battleInfo, throwable));
     }
@@ -70,7 +67,6 @@ public class BattleInfoResource {
             @PathVariable(value = "id") String id) {
         return battleInfoRepository
                 .deleteBattleInfoById(id)
-                .doOnSuccess(aVoid -> log.info("Outgoing response {}", requestId))
                 .doOnError(throwable -> log.error("Unable to delete battle info { request_id: {}, battle_id: {} }",
                         requestId, id, throwable));
     }
@@ -82,7 +78,6 @@ public class BattleInfoResource {
             @PathVariable(value = "character_id") String characterId) {
         return battleInfoRepository
                 .deleteBattleInfoByCharacterId(characterId)
-                .doOnSuccess(aVoid -> log.info("Outgoing response {}", requestId))
                 .doOnError(throwable -> log.error("Unable to delete battle info { request_id: {}, character_id: {} }",
                         requestId, characterId, throwable));
     }

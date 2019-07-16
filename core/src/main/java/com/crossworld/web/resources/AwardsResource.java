@@ -34,7 +34,6 @@ public class AwardsResource {
             @PathVariable(value = "id") String id) {
         return awardsRepository
                 .getAwardsById(id)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to get awards { request_id: {}, awards_id: {} }",
                         requestId, id, throwable));
     }
@@ -46,7 +45,6 @@ public class AwardsResource {
             @RequestBody Awards awards) {
         return awardsRepository
                 .saveAwards(awards)
-                .doOnSuccess(responseBody -> log.info("Outgoing response {} with body {}", requestId, responseBody))
                 .doOnError(throwable -> log.error("Unable to create awards { request_id: {}, request_body: {} }",
                         requestId, awards, throwable));
     }
@@ -58,7 +56,6 @@ public class AwardsResource {
             @PathVariable(value = "id") String id) {
         return awardsRepository
                 .deleteAwards(id)
-                .doOnSuccess(aVoid -> log.info("Outgoing response {}", requestId))
                 .doOnError(throwable -> log.error("Unable to delete awards { request_id: {}, awards_id: {} }",
                         requestId, id, throwable));
     }
