@@ -1,8 +1,11 @@
 package com.crossworld.web.clients.impl;
 
+import static java.lang.String.format;
+
 import com.crossworld.web.clients.CoreWebClient;
 import com.crossworld.web.data.internal.character.GameCharacter;
 import com.crossworld.web.exception.ServiceNotAvailableException;
+import com.crossworld.web.filters.OutgoingRequestResponseLoggingFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,19 +35,21 @@ public class CoreWebClientImpl implements CoreWebClient {
     private String coreInstanceName;
 
     private final LoadBalancerClient loadBalancerClient;
+    private final OutgoingRequestResponseLoggingFilter loggingFilter;
 
     @Override
     public Mono<GameCharacter> getUserCharacter(String userId) {
         String coreBaseUrl = getCoreBaseUrl();
 
+        //TODO: replace with getting request_id from context
         String requestId = UUID.randomUUID().toString();
 
-        return WebClient.create(String.format(USER_CHARACTER_FORMAT, coreBaseUrl, userId))
+        final String url = format(USER_CHARACTER_FORMAT, coreBaseUrl, userId);
+        return buildWebClient(requestId, url)
                 .get()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .retrieve()
-                .bodyToMono(GameCharacter.class)
-                .log();
+                .bodyToMono(GameCharacter.class);
     }
 
     @Override
@@ -53,21 +58,30 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         String requestId = UUID.randomUUID().toString();
 
-        return WebClient.create(String.format(SAVE_CHARACTER_FORMAT, coreBaseUrl))
+        final String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
+        return buildWebClient(requestId, url)
                 .post()
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
-                .bodyToMono(GameCharacter.class)
-                .log();
+                .bodyToMono(GameCharacter.class);
     }
 
+    private WebClient buildWebClient(String requestId, String url) {
+        return WebClient.builder()
+                .baseUrl(url)
+                .filter(loggingFilter)
+                .defaultHeader(REQUEST_ID_HEADER_NAME, requestId)
+                .build();
+    }
+
+    //TODO: FTCW-8 - Replace with feign clients
     private String getCoreBaseUrl() {
         return Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
                 .map(ServiceInstance::getUri)
                 .map(URI::toString)
                 .orElseThrow(() ->
                         new ServiceNotAvailableException(
-                                String.format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+                                format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
     }
 }

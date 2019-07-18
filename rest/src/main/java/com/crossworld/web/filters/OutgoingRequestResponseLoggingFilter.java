@@ -10,12 +10,12 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-public class LoggingFilter implements ExchangeFilterFunction {
+public class OutgoingRequestResponseLoggingFilter implements ExchangeFilterFunction {
 
     @Override
     public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
         return  Mono.fromRunnable(() ->
-                log.info("Outgoing request {} {} headers {}",
+                log.info("Outgoing request {} {} with headers {}",
                         request.method(), request.url(), request.headers()))
                 .then(next.exchange(request).doOnSuccess(clientResponse ->
                         log.info("Incoming response {} from {} {} headers {}",

@@ -10,11 +10,9 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 @Slf4j
 @Component
-public class LoggingWebFilter implements WebFilter {
+public class IncomingRequestResponseLoggingFilter implements WebFilter {
 
     private static final String REQUEST_ID_HEADER = "request_id";
 
@@ -23,7 +21,7 @@ public class LoggingWebFilter implements WebFilter {
         var request = exchange.getRequest();
         logRequest(request);
 
-        final List<String> requestId = request.getHeaders().get(REQUEST_ID_HEADER);
+        var requestId = request.getHeaders().get(REQUEST_ID_HEADER);
 
         if (requestId == null) {
             throw new MissingHeaderException(String.format("Required header is missing: %s", REQUEST_ID_HEADER));
@@ -38,12 +36,12 @@ public class LoggingWebFilter implements WebFilter {
     }
 
     private void logResponse(ServerHttpRequest request, ServerHttpResponse response) {
-        log.info("Outgoing response request_id: {} {} {}: status {}", response.getHeaders(),
-                request.getMethod(), request.getURI(), response.getStatusCode());
+        log.info("Outgoing response {} from {} {} with headers {}", response.getStatusCode(),
+                request.getMethod(), request.getURI(), response.getHeaders());
     }
 
     private void logRequest(ServerHttpRequest request) {
-        log.info("Incoming request with request_id: {} {} {}",
-                request.getHeaders(), request.getMethod(), request.getURI());
+        log.info("Incoming request {} {} with headers {}",
+                request.getMethod(), request.getURI(), request.getHeaders());
     }
 }

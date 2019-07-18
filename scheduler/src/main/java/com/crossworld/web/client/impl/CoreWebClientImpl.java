@@ -19,7 +19,7 @@ import com.crossworld.web.data.events.battle.Monster;
 import com.crossworld.web.exception.MessageNotReadableException;
 import com.crossworld.web.exception.ServiceCommunicationException;
 import com.crossworld.web.exception.ServiceNotAvailableException;
-import com.crossworld.web.filters.LoggingFilter;
+import com.crossworld.web.filters.OutgoingRequestResponseLoggingFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +56,7 @@ public class CoreWebClientImpl implements CoreWebClient {
     private String coreInstanceName;
 
     private final LoadBalancerClient loadBalancerClient;
-    private final LoggingFilter loggingFilter;
+    private final OutgoingRequestResponseLoggingFilter loggingFilter;
 
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {
