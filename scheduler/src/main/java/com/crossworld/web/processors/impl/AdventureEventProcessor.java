@@ -32,8 +32,9 @@ public class AdventureEventProcessor implements EventProcessor {
                             finishAdventure(gameCharacter, adventure);
                         }
                     })
-                    .doOnSuccess(coreWebClient::updateAdventure)
-                    .then(coreWebClient.saveGameCharacter(gameCharacter))
+                    .doOnSuccess(adventure ->
+                            coreWebClient.updateAdventure(adventure)
+                                    .subscribe(a -> coreWebClient.saveGameCharacter(gameCharacter).subscribe()))
                     .subscribe();
         }
     }

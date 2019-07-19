@@ -12,15 +12,20 @@ import reactor.core.publisher.Mono;
 @Component
 public class OutgoingRequestResponseLoggingFilter implements ExchangeFilterFunction {
 
+    private static final String REQUEST_ID = "request_id";
+
     @Override
     public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
-        return  Mono.fromRunnable(() ->
+        return Mono.fromRunnable(() ->
                 log.info("Outgoing request {} {} with headers {}",
                         request.method(), request.url(), request.headers()))
-                .then(next.exchange(request).doOnSuccess(clientResponse ->
-                        log.info("Incoming response {} from {} {} headers {}",
-                                clientResponse.statusCode(), request.method(), request.url(),
-                                clientResponse.headers().asHttpHeaders())));
+                .then(next.exchange(request)
+                        .doOnSuccess(clientResponse ->
+                                log.info("Incoming response {} from {} {} headers {}",
+                                        clientResponse.statusCode(), request.method(), request.url(),
+                                        clientResponse.headers().asHttpHeaders()))
+                        .doOnError(throwable -> log.error("Exception occurred: request_id: {}",
+                                request.headers().get(REQUEST_ID), throwable)));
     }
 
     @Override

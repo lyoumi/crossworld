@@ -1,13 +1,12 @@
 package com.crossworld.web.client.impl;
 
-import static com.crossworld.web.logging.LoggingTemplates.UNABLE_TO_GET_SUCCESS_RESPONSE;
-import static com.crossworld.web.logging.LoggingTemplates.UNABLE_TO_READ_RESPONSE;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 
 import com.crossworld.web.client.CoreWebClient;
@@ -16,7 +15,10 @@ import com.crossworld.web.data.events.adventure.Adventure;
 import com.crossworld.web.data.events.awards.Awards;
 import com.crossworld.web.data.events.battle.BattleInfo;
 import com.crossworld.web.data.events.battle.Monster;
-import com.crossworld.web.exception.MessageNotReadableException;
+import com.crossworld.web.exception.AdventureNotFoundException;
+import com.crossworld.web.exception.AwardsNotFoundException;
+import com.crossworld.web.exception.BattleInfoNotFoundException;
+import com.crossworld.web.exception.MonsterNotFoundException;
 import com.crossworld.web.exception.ServiceCommunicationException;
 import com.crossworld.web.exception.ServiceNotAvailableException;
 import com.crossworld.web.filters.OutgoingRequestResponseLoggingFilter;
@@ -25,9 +27,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -40,17 +44,18 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CoreWebClientImpl implements CoreWebClient {
 
-    private static String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
-    private static String INTERNAL_COMMUNICATION_EXCEPTION = "Internal communication exception";
+    private static final String SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE = "Service {%s} currently is not available.";
+    private static final String INTERNAL_COMMUNICATION_EXCEPTION = "Internal communication exception";
+    private static final String UNABLE_TO_GET_SUCCESS_RESPONSE = "Unable to get success response from {}: {}: { request_id: {}, status_code: {}}";
 
-    private static String REQUEST_ID_HEADER_NAME = "request_id";
+    private static final String REQUEST_ID_HEADER_NAME = "request_id";
 
-    private static String ALL_CHARACTERS_FORMAT = "%s/private/character/all/";
-    private static String SAVE_CHARACTER_FORMAT = "%s/private/character/";
-    private static String ADVENTURE_FORMAT = "%s/private/adventure/";
-    private static String BATTLE_FORMAT = "%s/private/battle/";
-    private static String MONSTER_FORMAT = "%s/private/monster/";
-    private static String AWARDS_FORMAT = "%s/private/awards/";
+    private static final String ALL_CHARACTERS_FORMAT = "%s/private/character/all/";
+    private static final String SAVE_CHARACTER_FORMAT = "%s/private/character/";
+    private static final String ADVENTURE_FORMAT = "%s/private/adventure/";
+    private static final String BATTLE_FORMAT = "%s/private/battle/";
+    private static final String MONSTER_FORMAT = "%s/private/monster/";
+    private static final String AWARDS_FORMAT = "%s/private/awards/";
 
     @Value("${services.core.instance.name}")
     private String coreInstanceName;
@@ -71,11 +76,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .header(REQUEST_ID_HEADER_NAME, requestId)
                 .accept(APPLICATION_STREAM_JSON)
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
                 .bodyToFlux(GameCharacter.class)
                 .doOnError(exception ->
                         log.error("Unable to process response {} from service {{} : {}}: {}",
@@ -93,11 +94,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .put()
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, PUT))
                 .bodyToMono(GameCharacter.class);
     }
 
@@ -112,15 +109,8 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .post()
                 .body(BodyInserters.fromObject(adventure))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
-                                    clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Adventure.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, POST))
+                .bodyToMono(Adventure.class);
     }
 
     @Override
@@ -134,14 +124,8 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .put()
                 .body(BodyInserters.fromObject(adventure))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Adventure.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))));
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, PUT))
+                .bodyToMono(Adventure.class);
     }
 
     @Override
@@ -156,14 +140,11 @@ public class CoreWebClientImpl implements CoreWebClient {
         return buildWebClient(requestId, url)
                 .get()
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Adventure.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
+                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
+                        Mono.error(new AdventureNotFoundException(
+                                format("Active adventure with character id %s not found", gameCharacterId))))
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
+                .bodyToMono(Adventure.class);
     }
 
     @Override
@@ -177,15 +158,8 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .post()
                 .body(BodyInserters.fromObject(battleInfo))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
-                                    clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(BattleInfo.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, POST))
+                .bodyToMono(BattleInfo.class);
     }
 
     @Override
@@ -199,14 +173,9 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .put()
                 .body(BodyInserters.fromObject(battleInfo))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(BattleInfo.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))));
+                .onStatus(HttpStatus::isError,
+                        clientResponse -> buildError(requestId, url, clientResponse, PUT))
+                .bodyToMono(BattleInfo.class);
     }
 
     @Override
@@ -221,14 +190,11 @@ public class CoreWebClientImpl implements CoreWebClient {
         return buildWebClient(requestId, url)
                 .get()
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(BattleInfo.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
+                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
+                        Mono.error(new BattleInfoNotFoundException(
+                                format("Battle info with character id %s not found", gameCharacterId))))
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
+                .bodyToMono(BattleInfo.class);
     }
 
     @Override
@@ -242,11 +208,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         return buildWebClient(requestId, url)
                 .delete()
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
                 .bodyToMono(Void.class);
     }
 
@@ -261,15 +223,8 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .post()
                 .body(BodyInserters.fromObject(monster))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
-                                    clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Monster.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, POST))
+                .bodyToMono(Monster.class);
     }
 
     @Override
@@ -283,14 +238,8 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .put()
                 .body(BodyInserters.fromObject(monster))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, PUT, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Monster.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, PUT, url))));
+                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, PUT))
+                .bodyToMono(Monster.class);
     }
 
     @Override
@@ -303,10 +252,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         return buildWebClient(requestId, url)
                 .delete()
                 .retrieve()
-                .onStatus(HttpStatus::is5xxServerError, clientResponse -> {
-                    log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, DELETE, url, requestId, clientResponse.statusCode());
-                    return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                })
+                .onStatus(HttpStatus::is5xxServerError,
+                        clientResponse -> buildError(requestId, url, clientResponse, DELETE))
                 .bodyToMono(Void.class);
     }
 
@@ -320,14 +267,12 @@ public class CoreWebClientImpl implements CoreWebClient {
         return buildWebClient(requestId, url)
                 .get()
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Monster.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
+                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
+                        clientResponse -> Mono.error(new MonsterNotFoundException(
+                                format("Monster with id %s not found", id))))
+                .onStatus(HttpStatus::isError,
+                        clientResponse -> buildError(requestId, url, clientResponse, GET))
+                .bodyToMono(Monster.class);
     }
 
     @Override
@@ -341,15 +286,9 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .post()
                 .body(BodyInserters.fromObject(awards))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, POST, url, requestId,
-                                    clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Awards.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, POST, url))));
+                .onStatus(HttpStatus::isError,
+                        clientResponse -> buildError(requestId, url, clientResponse, POST))
+                .bodyToMono(Awards.class);
     }
 
     @Override
@@ -362,14 +301,12 @@ public class CoreWebClientImpl implements CoreWebClient {
         return buildWebClient(requestId, url)
                 .get()
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
-                .bodyToMono(Awards.class)
-                .switchIfEmpty(Mono.error(new MessageNotReadableException(
-                        format(UNABLE_TO_READ_RESPONSE, requestId, GET, url))));
+                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
+                        Mono.error(new AwardsNotFoundException(
+                                format("Awards with id %s not found", id))))
+                .onStatus(HttpStatus::isError,
+                        clientResponse -> buildError(requestId, url, clientResponse, GET))
+                .bodyToMono(Awards.class);
     }
 
     @Override
@@ -382,11 +319,8 @@ public class CoreWebClientImpl implements CoreWebClient {
         return buildWebClient(requestId, url)
                 .delete()
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.is5xxServerError() || httpStatus.is4xxClientError(),
-                        clientResponse -> {
-                            log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, GET, url, requestId, clientResponse.statusCode());
-                            return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
-                        })
+                .onStatus(HttpStatus::isError,
+                        clientResponse -> buildError(requestId, url, clientResponse, DELETE))
                 .bodyToMono(Void.class);
     }
 
@@ -405,5 +339,12 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .orElseThrow(() ->
                         new ServiceNotAvailableException(
                                 format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+    }
+
+    private Mono<? extends Throwable> buildError(String requestId, String url, ClientResponse clientResponse,
+            HttpMethod post) {
+        log.error(UNABLE_TO_GET_SUCCESS_RESPONSE, post, url, requestId,
+                clientResponse.statusCode());
+        return Mono.error(new ServiceCommunicationException(INTERNAL_COMMUNICATION_EXCEPTION));
     }
 }
