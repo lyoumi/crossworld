@@ -1,5 +1,7 @@
 package com.crossworld.web.filters;
 
+import static com.crossworld.web.errors.ErrorMessageTemplates.HEADER_IS_MISSING;
+
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -25,7 +27,7 @@ public class IncomingRequestResponseLoggingFilter implements WebFilter {
 
         //TODO: Implement security check and set header data to context
         if (requestId == null) {
-            throw new MissingHeaderException(String.format("Required header is missing: %s", REQUEST_ID_HEADER));
+            throw new MissingHeaderException(String.format(HEADER_IS_MISSING, REQUEST_ID_HEADER));
         } else {
             exchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, requestId.toString());
         }
