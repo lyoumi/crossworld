@@ -1,10 +1,12 @@
 package com.crossworld.web.resources;
 
+import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON_VALUE;
 
 import com.crossworld.web.data.character.GameCharacter;
+import com.crossworld.web.errors.exceptions.CharacterNotFoundException;
 import com.crossworld.web.repositories.GameCharacterRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,8 @@ public class GameCharacterResource {
             @RequestHeader(value = "request_id") String requestId,
             @PathVariable("user_id") String userId) {
         return gameCharacterRepository.getUsersCharacter(userId)
+                .switchIfEmpty(Mono.error(
+                        new CharacterNotFoundException(format("Unable to find character by user id: %s", userId))))
                 .doOnError(throwable -> log.error("Unable to get game character by user_id: { user_id: {}, request_id: {} }",
                                 userId, requestId, throwable));
     }

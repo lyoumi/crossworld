@@ -1,14 +1,11 @@
 package com.crossworld.web.configuration;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
-import com.crossworld.web.errors.exceptions.GameCharacterNotFoundException;
+import com.crossworld.web.errors.exceptions.CharacterNotFoundException;
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
-import com.crossworld.web.errors.exceptions.ServiceNotAvailableException;
 import com.crossworld.web.errors.handlers.CommonExceptionHandler;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -35,19 +32,14 @@ public class ExceptionHandlingConfiguration {
             Map.of(
                     MissingHeaderException.class, exception ->
                             ServerResponse.status(BAD_REQUEST)
-                                    .body(fromObject(new HttpErrorMessage(1024000,
+                                    .body(fromObject(new HttpErrorMessage(1014000,
                                             BAD_REQUEST.getReasonPhrase(),
                                             exception.getMessage()))),
-                    GameCharacterNotFoundException.class, exception ->
+                    CharacterNotFoundException.class, exception ->
                             ServerResponse.status(NOT_FOUND)
-                                    .body(fromObject(new HttpErrorMessage(1024040,
+                                    .body(fromObject(new HttpErrorMessage(1014040,
                                             NOT_FOUND.getReasonPhrase(),
-                                            exception.getMessage()))),
-                    ServiceNotAvailableException.class, exception ->
-                            ServerResponse.status(SERVICE_UNAVAILABLE)
-                                    .body(fromObject(new HttpErrorMessage(1025030,
-                                            INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                                            INTERNAL_SERVER_ERROR.getReasonPhrase())))
+                                            exception.getMessage())))
             );
 
     @Bean

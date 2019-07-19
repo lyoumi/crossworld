@@ -1,4 +1,4 @@
-package com.crossworld.web.exceptions;
+package com.crossworld.web.errors.exceptions;
 
 public class MissingHeaderException extends RuntimeException {
 

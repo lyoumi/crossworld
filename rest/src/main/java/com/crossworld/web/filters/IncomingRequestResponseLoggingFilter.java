@@ -34,7 +34,7 @@ public class IncomingRequestResponseLoggingFilter implements WebFilter {
 
         return chain.filter(exchange)
                 .doOnSuccess(aVoid -> logResponse(request, exchange.getResponse()))
-                .doOnError(throwable -> log.error("Unable to process request {} {} {}",
+                .doOnError(throwable -> log.error("Unable to process response {} {} {}",
                         requestId, request.getMethod(), request.getURI(), throwable));
     }
 

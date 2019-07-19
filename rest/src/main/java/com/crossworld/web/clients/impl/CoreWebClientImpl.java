@@ -57,7 +57,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
                         clientResponse -> Mono.error(
-                                new GameCharacterNotFoundException(format("Unable to get response from %s", url))))
+                                new GameCharacterNotFoundException(format("Unable to get response by user id %s", userId))))
                 .onStatus(HttpStatus::isError, this::mapErrorResponses)
                 .bodyToMono(GameCharacter.class);
     }
