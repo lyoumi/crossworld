@@ -2,11 +2,12 @@ package com.crossworld.web.dao;
 
 import com.crossworld.web.entities.AdventureEntity;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface AdventureDao extends ReactiveMongoRepository<AdventureEntity, String> {
 
-    Mono<AdventureEntity> findAdventureEntityByCharacterId(String characterId);
+    Flux<AdventureEntity> findAdventureEntityByCharacterId(String characterId);
 
     Mono<AdventureEntity> findAdventureEntityByStatusAndCharacterId(String status, String characterId);
 

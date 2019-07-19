@@ -4,6 +4,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 import com.crossworld.web.errors.http.HttpErrorMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
@@ -19,7 +20,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+@Slf4j
 public class CommonExceptionHandler extends AbstractErrorWebExceptionHandler {
+
+    private static final String REQUEST_ID = "request_id";
 
     private final Map<Class<? extends Throwable>, Function<Throwable, Mono<ServerResponse>>> exceptionMappings;
 
@@ -38,6 +42,7 @@ public class CommonExceptionHandler extends AbstractErrorWebExceptionHandler {
 
     private Mono<ServerResponse> renderErrorResponse(ServerRequest request, ErrorAttributes errorAttributes) {
         var exception = errorAttributes.getError(request);
+        log.error("Exception occurred: request_id: {}", request.headers().asHttpHeaders().get(REQUEST_ID), exception);
         return Optional.ofNullable(exceptionMappings.get(exception.getClass()))
                 .map(throwableMonoFunction -> throwableMonoFunction.apply(exception))
                 .orElse(ServerResponse.status(INTERNAL_SERVER_ERROR)

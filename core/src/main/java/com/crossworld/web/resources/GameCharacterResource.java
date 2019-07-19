@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,43 +31,29 @@ public class GameCharacterResource {
 
     @ResponseStatus(OK)
     @GetMapping(value = "user/{user_id}")
-    public Mono<GameCharacter> getUsersGameCharacter(
-            @RequestHeader(value = "request_id") String requestId,
-            @PathVariable("user_id") String userId) {
+    public Mono<GameCharacter> getUsersGameCharacter(@PathVariable("user_id") String userId) {
         return gameCharacterRepository.getUsersCharacter(userId)
                 .switchIfEmpty(Mono.error(
-                        new CharacterNotFoundException(format("Unable to find character by user id: %s", userId))))
-                .doOnError(throwable -> log.error("Unable to get game character by user_id: { user_id: {}, request_id: {} }",
-                                userId, requestId, throwable));
+                        new CharacterNotFoundException(format("Character with user id %s not found", userId))));
     }
 
     @ResponseStatus(CREATED)
     @PostMapping
-    public Mono<GameCharacter> createCharacter(
-            @RequestHeader(value = "request_id") String requestId,
-            @RequestBody GameCharacter gameCharacter) {
-        return gameCharacterRepository.save(gameCharacter)
-                .doOnError(throwable -> log.error("Unable to store game character: { body: {}, request_id: {} }",
-                                gameCharacter, requestId, throwable));
+    public Mono<GameCharacter> createCharacter(@RequestBody GameCharacter gameCharacter) {
+        return gameCharacterRepository.save(gameCharacter);
 
     }
 
     @ResponseStatus(OK)
     @PutMapping
-    public Mono<GameCharacter> updateCharacter(
-            @RequestHeader(value = "request_id") String requestId,
-            @RequestBody GameCharacter gameCharacter) {
-        return gameCharacterRepository.save(gameCharacter)
-                .doOnError(throwable -> log.error("Unable to store game character: { body: {}, request_id: {} }",
-                                gameCharacter, requestId, throwable));
+    public Mono<GameCharacter> updateCharacter(@RequestBody GameCharacter gameCharacter) {
+        return gameCharacterRepository.save(gameCharacter);
 
     }
 
     @ResponseStatus(OK)
     @GetMapping(value = "all", produces = APPLICATION_STREAM_JSON_VALUE)
-    public Flux<GameCharacter> getAllGameCharacters(
-            @RequestHeader(value = "request_id") String requestId) {
-        return gameCharacterRepository.getAllGameCharacters()
-                .doOnError(throwable -> log.error("Unable to get all game characters", throwable));
+    public Flux<GameCharacter> getAllGameCharacters() {
+        return gameCharacterRepository.getAllGameCharacters();
     }
 }

@@ -1,7 +1,5 @@
 package com.crossworld.web.clients.impl;
 
-import static com.crossworld.web.errors.ErrorMessageTemplates.INTERNAL_COMMUNICATION_FAILURE;
-import static com.crossworld.web.errors.ErrorMessageTemplates.SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE;
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -92,11 +90,11 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .map(URI::toString)
                 .orElseThrow(() ->
                         new ServiceNotAvailableException(
-                                format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, coreInstanceName)));
+                                format("Service {%s} currently is not available.", coreInstanceName)));
     }
 
     private Mono<? extends Throwable> mapErrorResponses(ClientResponse clientResponse) {
-        return Mono.error(new InternalCommunicationException(format(INTERNAL_COMMUNICATION_FAILURE,
+        return Mono.error(new InternalCommunicationException(format("Internal communication failure: status %s body %s",
                 clientResponse.statusCode(),clientResponse.bodyToMono(HttpErrorMessage.class))));
     }
 }

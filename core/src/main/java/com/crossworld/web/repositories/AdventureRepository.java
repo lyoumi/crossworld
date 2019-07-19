@@ -1,6 +1,7 @@
 package com.crossworld.web.repositories;
 
 import com.crossworld.web.data.events.adventure.Adventure;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface AdventureRepository {
@@ -9,7 +10,7 @@ public interface AdventureRepository {
 
     Mono<Adventure> getAdventureById(String id);
 
-    Mono<Adventure> getAdventureByCharacterId(String characterId);
+    Flux<Adventure> getAdventureByCharacterId(String characterId);
 
     Mono<Adventure> getActiveAdventureByCharacterId(String characterId);
 

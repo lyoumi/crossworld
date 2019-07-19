@@ -4,8 +4,12 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
+import com.crossworld.web.errors.exceptions.AdventureNotFoundException;
+import com.crossworld.web.errors.exceptions.AwardsNotFoundException;
+import com.crossworld.web.errors.exceptions.BattleInfoNotFoundException;
 import com.crossworld.web.errors.exceptions.CharacterNotFoundException;
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
+import com.crossworld.web.errors.exceptions.MonsterNotFoundException;
 import com.crossworld.web.errors.handlers.CommonExceptionHandler;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -38,6 +42,26 @@ public class ExceptionHandlingConfiguration {
                     CharacterNotFoundException.class, exception ->
                             ServerResponse.status(NOT_FOUND)
                                     .body(fromObject(new HttpErrorMessage(1014040,
+                                            NOT_FOUND.getReasonPhrase(),
+                                            exception.getMessage()))),
+                    AdventureNotFoundException.class, exception ->
+                            ServerResponse.status(NOT_FOUND)
+                                    .body(fromObject(new HttpErrorMessage(1014041,
+                                            NOT_FOUND.getReasonPhrase(),
+                                            exception.getMessage()))),
+                    AwardsNotFoundException.class, exception ->
+                            ServerResponse.status(NOT_FOUND)
+                                    .body(fromObject(new HttpErrorMessage(1014042,
+                                            NOT_FOUND.getReasonPhrase(),
+                                            exception.getMessage()))),
+                    BattleInfoNotFoundException.class, exception ->
+                            ServerResponse.status(NOT_FOUND)
+                                    .body(fromObject(new HttpErrorMessage(1014043,
+                                            NOT_FOUND.getReasonPhrase(),
+                                            exception.getMessage()))),
+                    MonsterNotFoundException.class, exception ->
+                            ServerResponse.status(NOT_FOUND)
+                                    .body(fromObject(new HttpErrorMessage(1014044,
                                             NOT_FOUND.getReasonPhrase(),
                                             exception.getMessage())))
             );

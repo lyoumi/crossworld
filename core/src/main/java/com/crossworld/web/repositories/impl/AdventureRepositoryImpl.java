@@ -7,6 +7,7 @@ import com.crossworld.web.data.events.adventure.AdventureStatus;
 import com.crossworld.web.repositories.AdventureRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @AllArgsConstructor
@@ -31,7 +32,7 @@ public class AdventureRepositoryImpl implements AdventureRepository {
     }
 
     @Override
-    public Mono<Adventure> getAdventureByCharacterId(String characterId) {
+    public Flux<Adventure> getAdventureByCharacterId(String characterId) {
         return adventureDao
                 .findAdventureEntityByCharacterId(characterId)
                 .map(converterService::convert);
