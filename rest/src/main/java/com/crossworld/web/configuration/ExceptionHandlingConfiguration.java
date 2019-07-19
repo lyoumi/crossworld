@@ -1,9 +1,12 @@
 package com.crossworld.web.configuration;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
+import com.crossworld.web.errors.exceptions.ServiceNotAvailableException;
 import com.crossworld.web.errors.handlers.CommonExceptionHandler;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -30,9 +33,14 @@ public class ExceptionHandlingConfiguration {
             Map.of(
                     MissingHeaderException.class, exception ->
                             ServerResponse.badRequest()
-                                    .body(fromObject(new HttpErrorMessage(100400,
+                                    .body(fromObject(new HttpErrorMessage(1004000,
                                             BAD_REQUEST.getReasonPhrase(),
-                                            exception.getMessage())))
+                                            exception.getMessage()))),
+                    ServiceNotAvailableException.class, exception ->
+                            ServerResponse.status(SERVICE_UNAVAILABLE)
+                                    .body(fromObject(new HttpErrorMessage(1005030,
+                                            INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                                            INTERNAL_SERVER_ERROR.getReasonPhrase())))
             );
 
     @Bean

@@ -41,7 +41,7 @@ public class CommonExceptionHandler extends AbstractErrorWebExceptionHandler {
         return Optional.ofNullable(exceptionMappings.get(exception.getClass()))
                 .map(throwableMonoFunction -> throwableMonoFunction.apply(exception))
                 .orElse(ServerResponse.status(INTERNAL_SERVER_ERROR)
-                        .body(fromObject(new HttpErrorMessage(100500,
+                        .body(fromObject(new HttpErrorMessage(1005000,
                                 INTERNAL_SERVER_ERROR.getReasonPhrase(),
                                 INTERNAL_SERVER_ERROR.getReasonPhrase()))));
     }
