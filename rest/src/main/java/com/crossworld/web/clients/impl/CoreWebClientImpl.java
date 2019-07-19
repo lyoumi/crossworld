@@ -4,7 +4,7 @@ import static java.lang.String.format;
 
 import com.crossworld.web.clients.CoreWebClient;
 import com.crossworld.web.data.internal.character.GameCharacter;
-import com.crossworld.web.exception.ServiceNotAvailableException;
+import com.crossworld.web.errors.exceptions.ServiceNotAvailableException;
 import com.crossworld.web.filters.OutgoingRequestResponseLoggingFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

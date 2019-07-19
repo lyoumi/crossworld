@@ -1,6 +1,6 @@
 package com.crossworld.web.filters;
 
-import com.crossworld.web.exception.MissingHeaderException;
+import com.crossworld.web.errors.exceptions.MissingHeaderException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
