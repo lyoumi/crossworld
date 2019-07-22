@@ -9,9 +9,12 @@ import com.crossworld.web.data.events.battle.BattleInfo;
 import com.crossworld.web.data.events.battle.Monster;
 import com.crossworld.web.processors.EventProcessor;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
+@Slf4j
 @Component("battleEventProcessor")
 @AllArgsConstructor
 public class BattleEventProcessor implements EventProcessor {
@@ -30,6 +33,7 @@ public class BattleEventProcessor implements EventProcessor {
                         .subscribe(gc ->
                                 coreWebClient
                                         .saveGameCharacter(gc)
+                                        .subscribeOn(Schedulers.parallel())
                                         .subscribe())
                 );
     }
@@ -38,16 +42,19 @@ public class BattleEventProcessor implements EventProcessor {
         return coreWebClient.getMonsterById(battleInfo.getMonsterId())
                 .doOnSuccess(monster -> {
                     var characterStats = gameCharacter.getStats();
-                    final GameInventory gameInventory = gameCharacter.getGameInventory();
+                    var gameInventory = gameCharacter.getGameInventory();
                     if (canFight(gameCharacter, characterStats, gameInventory, monster)) {
                         characterStats.setHitPoints(characterStats.getHitPoints() - monster.getAttack());
                         monster.setHitPoints(monster.getHitPoints() - characterStats.getAttack());
                         if (monster.getHitPoints() < 1) {
                             removeMonster(gameCharacter, monster.getId(), battleInfo.getId());
                             coreWebClient.getAwardsById(battleInfo.getAwardsId())
-                                    .subscribe(awards -> {
-                                        collectAwards(gameCharacter, awards);
-                                    });
+                                    .subscribeOn(Schedulers.parallel())
+                                    .subscribe(awards -> collectAwards(gameCharacter, awards),
+                                            exception -> log.error("Something went wrong", exception),
+                                            () -> coreWebClient.deleteAwards(battleInfo.getAwardsId())
+                                                    .subscribeOn(Schedulers.parallel())
+                                                    .subscribe());
                         } else {
                             coreWebClient.updateMonster(monster).subscribe();
                         }
@@ -60,8 +67,8 @@ public class BattleEventProcessor implements EventProcessor {
 
     private void removeMonster(GameCharacter gameCharacter, String monsterId, String battleId) {
         gameCharacter.setFighting(false);
-        coreWebClient.deleteBattleInfo(battleId).subscribe();
-        coreWebClient.deleteMonster(monsterId).subscribe();
+        coreWebClient.deleteBattleInfo(battleId).subscribeOn(Schedulers.parallel()).subscribe();
+        coreWebClient.deleteMonster(monsterId).subscribeOn(Schedulers.parallel()).subscribe();
     }
 
     private void collectAwards(GameCharacter gameCharacter, Awards awards) {
@@ -74,7 +81,7 @@ public class BattleEventProcessor implements EventProcessor {
             CharacterStats characterStats,
             GameInventory gameInventory,
             Monster monster) {
-        boolean canFight = true;
+        var canFight = true;
         if (monster.getAttack() > characterStats.getHitPoints()) {
             if (gameInventory.getHealingHitPointItems() > 0) {
                 gameInventory.setHealingHitPointItems(gameInventory.getHealingHitPointItems() - 1);
