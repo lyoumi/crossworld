@@ -1,4 +1,4 @@
-package com.crossworld.web.resources;
+package com.crossworld.web.resources.impl;
 
 import static java.util.UUID.randomUUID;
 
@@ -7,25 +7,20 @@ import com.crossworld.web.data.internal.character.CharacterProgress;
 import com.crossworld.web.data.internal.character.CharacterStats;
 import com.crossworld.web.data.internal.character.GameCharacter;
 import com.crossworld.web.data.internal.character.GameInventory;
+import com.crossworld.web.resources.GameRequestHandler;
 import com.crossworld.web.services.GameControllerService;
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-@RestController
-@RequestMapping("private/rest/game")
+@Component
 @AllArgsConstructor
-public class GameControllerResource {
+public class GameRequestHandlerImpl implements GameRequestHandler {
 
     private final GameControllerService gameControllerService;
 
-    @PostMapping
-    public Mono<GameCharacter> createGameCharacter(@RequestBody PlayerCharacterInput playerCharacterInput) {
+    @Override
+    public Mono<GameCharacter> createGameCharacter(PlayerCharacterInput playerCharacterInput) {
         return gameControllerService.saveCharacter(
                 new GameCharacter(randomUUID().toString(), playerCharacterInput.getName(),
                         false, false, false, "",
@@ -34,8 +29,8 @@ public class GameControllerResource {
                         new GameInventory(), randomUUID().toString()));
     }
 
-    @GetMapping("{user_id}")
-    public Mono<GameCharacter> getUserGameCharacter(@PathVariable("user_id") String userId) {
+    @Override
+    public Mono<GameCharacter> getUserGameCharacter(String userId) {
         return gameControllerService.getUserCharacter(userId);
     }
 }
