@@ -32,11 +32,11 @@ public class CWUser {
     private String id;
 
     @Column(name = "username")
-    @Size(min = 2, max = 15)
+    @Size(min = 4, max = 15, message = "username size must be between 2 and 15;")
     private String username;
 
     @Column(name = "password")
-    @Size(min = 4, message = "Password must be more than 4 characters")
+    @Size(min = 4, message = "password size must be more than 4 characters")
     private String password;
 
     @Column(name = "name")
@@ -61,7 +61,7 @@ public class CWUser {
 
     @Column(name = "email")
     @Email(message = "Pls, enter valid email")
-    @NotEmpty(message = "Pls, enter email")
+    @NotEmpty(message = "Email must be present")
     private String email;
 
     @ManyToMany(cascade = CascadeType.MERGE)
