@@ -10,8 +10,7 @@ CREATE TABLE users (
     is_account_non_locked INT,
     is_credentials_non_expired INT,
     is_enabled INT,
-    email VARCHAR(256),
-    role_id VARCHAR(256)
+    email VARCHAR(256)
 );
 
 CREATE TABLE permissions(

@@ -1,6 +1,7 @@
 package com.crossworld.auth.data;
 
 import lombok.Data;
+import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
@@ -21,20 +22,21 @@ import javax.validation.constraints.Size;
 
 @Data
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 public class CWUser {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "uuid2")
     @Column(name = "id")
-    private Integer id;
+    private String id;
 
     @Column(name = "username")
     @Size(min = 2, max = 15)
     private String username;
 
     @Column(name = "password")
-    @Size(min = 4)
+    @Size(min = 4, message = "Password must be more than 4 characters")
     private String password;
 
     @Column(name = "name")
