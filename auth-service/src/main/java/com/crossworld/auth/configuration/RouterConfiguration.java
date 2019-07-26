@@ -8,11 +8,13 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 import com.crossworld.auth.data.CWAuthority;
 import com.crossworld.auth.data.CWRole;
 import com.crossworld.auth.data.CWUser;
+import com.crossworld.auth.handlers.AuthRequestHandler;
 import com.crossworld.auth.repositories.PermissionRepository;
 import com.crossworld.auth.repositories.RoleRepository;
 import com.crossworld.auth.repositories.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -25,11 +27,12 @@ public class RouterConfiguration {
     @Bean
     public RouterFunction routerFunction(UserRepository userRepository,
             PermissionRepository permissionRepository,
-            RoleRepository roleRepository) {
+            RoleRepository roleRepository,
+            AuthRequestHandler authRequestHandler) {
         return route(GET("/private/auth/user/name/{name}"), request ->
-                        ServerResponse.ok().body(Mono.justOrEmpty(request.pathVariable("name"))
-                                .map(userRepository::getByUsername)
-                                .flatMap(Mono::just), CWUser.class))
+                ServerResponse.ok().body(Mono.justOrEmpty(request.pathVariable("name"))
+                        .map(userRepository::getByUsername)
+                        .flatMap(Mono::just), CWUser.class))
                 .andRoute(POST("/private/auth/user"), request ->
                         ServerResponse.ok().body(request.bodyToMono(CWUser.class)
                                 .map(userRepository::save)
@@ -65,6 +68,11 @@ public class RouterConfiguration {
                         ServerResponse.ok().body(Mono.justOrEmpty(request.pathVariable("id"))
                                 .map(roleRepository::findById)
                                 .map(Optional::get)
-                                .flatMap(Mono::just), CWRole.class));
+                                .flatMap(Mono::just), CWRole.class))
+
+                .andRoute(POST("/private/auth/generate"), request ->
+                        ServerResponse.ok().body(request.bodyToMono(CWUser.class).flatMap(user ->
+                                        authRequestHandler.generateUserToken(user, request.headers().asHttpHeaders())),
+                                JwtAuthenticationToken.class));
     }
 }

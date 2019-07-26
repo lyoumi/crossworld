@@ -2,6 +2,7 @@ package com.crossworld.auth.filters;
 
 import com.crossworld.auth.errors.exceptions.MissingHeaderException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,7 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
+@Order(2)
 @Slf4j
 @Component
 public class IncomingRequestResponseLoggingFilter implements WebFilter {

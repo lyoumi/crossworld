@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @EnableWebFluxSecurity
@@ -16,15 +17,17 @@ public class SecurityConfiguration {
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http) {
-        return http.authorizeExchange()
+        http.authorizeExchange()
                 .anyExchange()
                 .authenticated()
                 .and()
                 .formLogin()
                 .and()
-                .csrf()
-                .disable()
-                .build();
+                .httpBasic().disable()
+                .csrf().disable()
+                .oauth2ResourceServer()
+                .jwt();
+        return http.build();
     }
 
     @Bean
@@ -40,5 +43,10 @@ public class SecurityConfiguration {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public JwtAuthenticationConverter authenticationConverter() {
+        return new JwtAuthenticationConverter();
     }
 }
