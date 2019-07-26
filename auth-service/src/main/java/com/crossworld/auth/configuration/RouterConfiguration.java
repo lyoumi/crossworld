@@ -29,7 +29,9 @@ public class RouterConfiguration {
             PermissionRepository permissionRepository,
             RoleRepository roleRepository,
             AuthRequestHandler authRequestHandler) {
-        return route(GET("/private/auth/user/name/{name}"), request ->
+        return
+                //temporary routes
+                route(GET("/private/auth/user/name/{name}"), request ->
                 ServerResponse.ok().body(Mono.justOrEmpty(request.pathVariable("name"))
                         .map(userRepository::getByUsername)
                         .flatMap(Mono::just), CWUser.class))

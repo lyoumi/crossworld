@@ -6,8 +6,6 @@ import com.crossworld.auth.handlers.AuthRequestHandler;
 import com.crossworld.auth.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -44,8 +42,8 @@ public class AuthRequestHandlerImpl implements AuthRequestHandler {
     }
 
     @Override
-    public Mono<JwtAuthenticationToken> validateUserToken(@AuthenticationPrincipal Authentication authentication) {
-        return jwtReactiveAuthenticationManager.authenticate(authentication).cast(JwtAuthenticationToken.class);
+    public Mono<JwtAuthenticationToken> validateUserToken(String auth) {
+        return Mono.empty();
     }
 
     public Map<String, Object> getExtraInfo() {
