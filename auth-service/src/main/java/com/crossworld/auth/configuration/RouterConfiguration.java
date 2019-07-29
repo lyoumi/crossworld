@@ -13,8 +13,8 @@ import com.crossworld.auth.handlers.AuthRequestHandler;
 import com.crossworld.auth.handlers.UserRequestHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.ServerRequest.Headers;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
@@ -68,6 +68,12 @@ public class RouterConfiguration {
                         .andRoute(POST("/private/auth/generate"), request ->
                                 ServerResponse.ok().body(request.bodyToMono(CWUser.class).flatMap(user ->
                                                 authRequestHandler.generateUserToken(user, request.headers().asHttpHeaders())),
-                                        JwtAuthenticationToken.class));
+                                        String.class))
+                        .andRoute(GET("/private/auth/validate"), request ->
+                                ServerResponse.ok().body(Mono.just(request.headers())
+                                        .map(Headers::asHttpHeaders)
+                                        .map(httpHeaders -> httpHeaders.get("Authorization"))
+                                        .map(headers -> headers.get(0))
+                                        .flatMap(authRequestHandler::validateUserToken), CWUser.class));
     }
 }

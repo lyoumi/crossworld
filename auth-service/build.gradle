@@ -21,11 +21,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-hystrix'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.security:spring-security-oauth2-client:5.1.5.RELEASE'
     implementation 'org.springframework.security:spring-security-oauth2-resource-server:5.1.5.RELEASE'
     implementation 'org.springframework.security:spring-security-oauth2-jose:5.1.5.RELEASE'
-    implementation 'com.auth0:java-jwt:3.8.1'
+    implementation "io.jsonwebtoken:jjwt:${jjwtVersion}"
     implementation "org.projectlombok:lombok:${lombokVersion}"
     compile group: 'com.zaxxer', name: 'HikariCP', version: "$hikariVersion"
     runtimeOnly 'mysql:mysql-connector-java'

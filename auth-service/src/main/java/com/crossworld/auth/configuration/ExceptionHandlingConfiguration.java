@@ -1,10 +1,12 @@
 package com.crossworld.auth.configuration;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 import com.crossworld.auth.errors.exceptions.MissingHeaderException;
+import com.crossworld.auth.errors.exceptions.TokenExpirationException;
 import com.crossworld.auth.errors.handlers.CommonExceptionHandler;
 import com.crossworld.auth.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -37,11 +39,18 @@ public class ExceptionHandlingConfiguration {
                                     .body(fromObject(new HttpErrorMessage(1034000,
                                             BAD_REQUEST.getReasonPhrase(),
                                             exception.getMessage()))),
+
+                    TokenExpirationException.class, exception ->
+                            ServerResponse.status(UNAUTHORIZED)
+                                    .body(fromObject(new HttpErrorMessage(1034030, UNAUTHORIZED.getReasonPhrase(),
+                                            exception.getMessage()))),
+
                     ConstraintViolationException.class, exception ->
                             ServerResponse.status(UNPROCESSABLE_ENTITY)
                                     .body(fromObject(new HttpErrorMessage(1034220,
                                             UNPROCESSABLE_ENTITY.getReasonPhrase(),
-                                            ((ConstraintViolationException)exception).getConstraintViolations().stream()
+                                            ((ConstraintViolationException) exception).getConstraintViolations()
+                                                    .stream()
                                                     .map(ConstraintViolation::getMessage)
                                                     .collect(Collectors.joining(DELIMITER)))))
             );
