@@ -3,7 +3,7 @@ package com.crossworld.auth.handlers.impl;
 import com.crossworld.auth.data.CWAuthority;
 import com.crossworld.auth.data.CWRole;
 import com.crossworld.auth.data.CWUser;
-import com.crossworld.auth.errors.exceptions.UserNotFound;
+import com.crossworld.auth.errors.exceptions.UserNotFoundException;
 import com.crossworld.auth.handlers.UserRequestHandler;
 import com.crossworld.auth.repositories.PermissionRepository;
 import com.crossworld.auth.repositories.RoleRepository;
@@ -49,7 +49,7 @@ public class UserRequestHandlerImpl implements UserRequestHandler {
     @Override
     public Mono<CWUser> disableUser(String id) {
         return Mono.fromCallable(() -> userRepository.getOne(id))
-                .switchIfEmpty(Mono.error(new UserNotFound(String.format("User with id %s not found", id))))
+                .switchIfEmpty(Mono.error(new UserNotFoundException(String.format("User with id %s not found", id))))
                 .doOnSuccess(user -> user.setEnabled(false));
     }
 
