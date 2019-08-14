@@ -1,13 +1,14 @@
 package com.crossworld.auth.handlers;
 
-import com.crossworld.auth.data.CWUser;
+import com.crossworld.auth.data.User;
+import com.crossworld.auth.output.UserOutputPayload;
 import org.springframework.http.HttpHeaders;
 import reactor.core.publisher.Mono;
 
 
 public interface AuthRequestHandler {
 
-    Mono<String> generateUserToken(CWUser cwUser, HttpHeaders headers);
+    Mono<String> generateUserToken(User cwUser, HttpHeaders headers);
 
-    Mono<CWUser> validateUserToken(String auth);
+    Mono<UserOutputPayload> validateUserToken(String auth);
 }

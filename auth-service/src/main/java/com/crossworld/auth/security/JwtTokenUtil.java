@@ -1,6 +1,6 @@
 package com.crossworld.auth.security;
 
-import com.crossworld.auth.data.CWUser;
+import com.crossworld.auth.data.User;
 import io.jsonwebtoken.Claims;
 
 import java.util.Date;
@@ -14,7 +14,7 @@ public interface JwtTokenUtil {
 
     <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver);
 
-    String generateToken(CWUser userDetails);
+    String generateToken(User userDetails);
 
     Boolean isTokenExpired(String token);
 }

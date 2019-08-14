@@ -1,34 +1,34 @@
 package com.crossworld.auth.handlers;
 
-import com.crossworld.auth.data.CWAuthority;
-import com.crossworld.auth.data.CWRole;
-import com.crossworld.auth.data.CWUser;
+import com.crossworld.auth.data.Authority;
+import com.crossworld.auth.data.Role;
+import com.crossworld.auth.data.User;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface UserRequestHandler {
 
-    Mono<CWUser> getUserByName(String username);
+    Mono<User> getUserByName(String username);
 
-    Mono<CWUser> createUser(CWUser cwUser);
+    Mono<User> createUser(User cwUser);
 
-    Mono<CWUser> updateUser(CWUser cwUser);
+    Mono<User> updateUser(User cwUser);
 
     Mono<Void> deleteUserById(String id);
 
-    Flux<CWUser> findAllUsers();
+    Flux<User> findAllUsers();
 
-    Mono<CWUser> disableUser(String id);
+    Mono<User> disableUser(String id);
 
-    Mono<CWRole> createRole(CWRole role);
+    Mono<Role> createRole(Role role);
 
-    Mono<CWRole> updateRole(CWRole role);
+    Mono<Role> updateRole(Role role);
 
-    Mono<CWRole> getRoleById(String id);
+    Mono<Role> getRoleById(String id);
 
     Mono<Void> deleteRoleById(String id);
 
-    Mono<CWAuthority> createAuthority(CWAuthority authority);
+    Mono<Authority> createAuthority(Authority authority);
 
     Mono<Void> deleteAuthorityById(String id);
 }

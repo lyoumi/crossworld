@@ -23,7 +23,7 @@ import javax.validation.constraints.Size;
 @Data
 @Entity
 @Table(name = "users")
-public class CWUser {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "uuid")
@@ -72,5 +72,5 @@ public class CWUser {
             inverseJoinColumns = {
                     @JoinColumn(name = "role_id")
             })
-    private Set<CWRole> roles;
+    private Set<Role> roles;
 }

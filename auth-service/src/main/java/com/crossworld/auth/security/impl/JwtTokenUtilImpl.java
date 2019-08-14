@@ -1,10 +1,12 @@
 package com.crossworld.auth.security.impl;
 
-import com.crossworld.auth.data.CWUser;
+import com.crossworld.auth.data.User;
+import com.crossworld.auth.errors.exceptions.TokenValidationException;
 import com.crossworld.auth.security.JwtTokenUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +41,7 @@ public class JwtTokenUtilImpl implements JwtTokenUtil {
     }
 
     @Override
-    public String generateToken(CWUser user) {
+    public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         return generateToken(claims, user.getUsername());
     }
@@ -51,7 +53,11 @@ public class JwtTokenUtilImpl implements JwtTokenUtil {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
+        try {
+            return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
+        } catch (SignatureException e) {
+            throw new TokenValidationException("Existing token is invalid", e);
+        }
     }
 
     private String generateToken(Map<String, Object> claims, String subject) {

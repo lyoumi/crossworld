@@ -18,6 +18,9 @@ services:
   core:
     instance:
       name: core
+  auth:
+    instance:
+      name: auth_server
 
 management:
   endpoints:

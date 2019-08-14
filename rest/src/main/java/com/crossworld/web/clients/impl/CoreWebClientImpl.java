@@ -1,5 +1,6 @@
 package com.crossworld.web.clients.impl;
 
+import static com.crossworld.web.security.SecurityUtils.getAuthHeaders;
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -24,7 +25,6 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -46,11 +46,8 @@ public class CoreWebClientImpl implements CoreWebClient {
     public Mono<GameCharacter> getUserCharacter(String userId) {
         String coreBaseUrl = getCoreBaseUrl();
 
-        //TODO: replace with getting request_id from context
-        String requestId = UUID.randomUUID().toString();
-
         final String url = format(USER_CHARACTER_FORMAT, coreBaseUrl, userId);
-        return buildWebClient(requestId, url)
+        return buildWebClient(getAuthHeaders().getRequestId(), getAuthHeaders().getAuthToken(), url)
                 .get()
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
@@ -64,10 +61,8 @@ public class CoreWebClientImpl implements CoreWebClient {
     public Mono<GameCharacter> saveUserCharacter(GameCharacter gameCharacter) {
         String coreBaseUrl = getCoreBaseUrl();
 
-        String requestId = UUID.randomUUID().toString();
-
         final String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
+        return buildWebClient(getAuthHeaders().getRequestId(), getAuthHeaders().getAuthToken(), url)
                 .post()
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
@@ -75,7 +70,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .bodyToMono(GameCharacter.class);
     }
 
-    private WebClient buildWebClient(String requestId, String url) {
+    private WebClient buildWebClient(String requestId, String token, String url) {
         return WebClient.builder()
                 .baseUrl(url)
                 .filter(loggingFilter)

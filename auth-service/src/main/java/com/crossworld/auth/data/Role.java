@@ -20,7 +20,7 @@ import javax.persistence.Table;
 @Data
 @Entity
 @Table(name = "roles")
-public class CWRole {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "uuid")
@@ -39,6 +39,6 @@ public class CWRole {
             inverseJoinColumns = {
                     @JoinColumn(name = "permission_id")
             })
-    private Set<CWAuthority> permissions;
+    private Set<Authority> permissions;
 
 }

@@ -1,6 +1,7 @@
 package com.crossworld.web.configuration;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
@@ -9,6 +10,7 @@ import static org.springframework.web.reactive.function.BodyInserters.fromObject
 import com.crossworld.web.errors.exceptions.GameCharacterNotFoundException;
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
 import com.crossworld.web.errors.exceptions.ServiceNotAvailableException;
+import com.crossworld.web.errors.exceptions.TokenValidationException;
 import com.crossworld.web.errors.handlers.CommonExceptionHandler;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -38,6 +40,11 @@ public class ExceptionHandlingConfiguration {
                                     .body(fromObject(new HttpErrorMessage(1024000,
                                             BAD_REQUEST.getReasonPhrase(),
                                             exception.getMessage()))),
+
+                    TokenValidationException.class, exception -> ServerResponse.status(FORBIDDEN)
+                            .body(fromObject(new HttpErrorMessage(1024030, FORBIDDEN.getReasonPhrase(),
+                                    FORBIDDEN.getReasonPhrase()))),
+
                     GameCharacterNotFoundException.class, exception ->
                             ServerResponse.status(NOT_FOUND)
                                     .body(fromObject(new HttpErrorMessage(1024040,

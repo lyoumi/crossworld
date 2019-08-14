@@ -1,12 +1,14 @@
 package com.crossworld.auth.configuration;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 import com.crossworld.auth.errors.exceptions.MissingHeaderException;
 import com.crossworld.auth.errors.exceptions.TokenExpirationException;
+import com.crossworld.auth.errors.exceptions.TokenValidationException;
 import com.crossworld.auth.errors.handlers.CommonExceptionHandler;
 import com.crossworld.auth.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -42,8 +44,13 @@ public class ExceptionHandlingConfiguration {
 
                     TokenExpirationException.class, exception ->
                             ServerResponse.status(UNAUTHORIZED)
-                                    .body(fromObject(new HttpErrorMessage(1034030, UNAUTHORIZED.getReasonPhrase(),
+                                    .body(fromObject(new HttpErrorMessage(1034010, UNAUTHORIZED.getReasonPhrase(),
                                             exception.getMessage()))),
+
+                    TokenValidationException.class, exception ->
+                            ServerResponse.status(FORBIDDEN)
+                                    .body(fromObject(new HttpErrorMessage(1034030, FORBIDDEN.getReasonPhrase(),
+                                            FORBIDDEN.getReasonPhrase()))),
 
                     ConstraintViolationException.class, exception ->
                             ServerResponse.status(UNPROCESSABLE_ENTITY)

@@ -13,7 +13,7 @@ import javax.persistence.Table;
 @Data
 @Entity
 @Table(name = "permissions")
-public class CWAuthority {
+public class Authority {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "uuid")
