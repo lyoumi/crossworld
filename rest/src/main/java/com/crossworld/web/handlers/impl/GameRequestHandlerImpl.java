@@ -1,4 +1,4 @@
-package com.crossworld.web.resources.impl;
+package com.crossworld.web.handlers.impl;
 
 import static java.util.UUID.randomUUID;
 
@@ -7,7 +7,7 @@ import com.crossworld.web.data.internal.character.CharacterProgress;
 import com.crossworld.web.data.internal.character.CharacterStats;
 import com.crossworld.web.data.internal.character.GameCharacter;
 import com.crossworld.web.data.internal.character.GameInventory;
-import com.crossworld.web.resources.GameRequestHandler;
+import com.crossworld.web.handlers.GameRequestHandler;
 import com.crossworld.web.services.GameControllerService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;

@@ -1,4 +1,4 @@
-package com.crossworld.web.resources;
+package com.crossworld.web.handlers;
 
 import com.crossworld.web.data.input.PlayerCharacterInput;
 import com.crossworld.web.data.internal.character.GameCharacter;

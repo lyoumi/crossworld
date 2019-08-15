@@ -23,5 +23,4 @@ public class Authority {
 
     @Column(name = "permission")
     private String permission;
-
 }

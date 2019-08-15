@@ -2,6 +2,8 @@ package com.crossworld.web.clients.impl;
 
 import static com.crossworld.web.security.SecurityUtils.getAuthHeaders;
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import com.crossworld.web.clients.CoreWebClient;
@@ -24,6 +26,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -31,9 +34,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CoreWebClientImpl implements CoreWebClient {
 
-    private static final String REQUEST_ID_HEADER_NAME = "request_id";
+    private static final String REQUEST_ID = "request_id";
 
-    private static final String USER_CHARACTER_FORMAT = "%s/private/character/user/%s/";
+    private static final String GET_CHARACTER_FORMAT = "%s/private/character/user/%s/";
     private static final String SAVE_CHARACTER_FORMAT = "%s/private/character/";
 
     @Value("${services.core.instance.name}")
@@ -46,13 +49,14 @@ public class CoreWebClientImpl implements CoreWebClient {
     public Mono<GameCharacter> getUserCharacter(String userId) {
         String coreBaseUrl = getCoreBaseUrl();
 
-        final String url = format(USER_CHARACTER_FORMAT, coreBaseUrl, userId);
-        return buildWebClient(getAuthHeaders().getRequestId(), getAuthHeaders().getAuthToken(), url)
+        final String url = format(GET_CHARACTER_FORMAT, coreBaseUrl, userId);
+        return buildWebClient(url)
                 .get()
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
                         clientResponse -> Mono.error(
-                                new GameCharacterNotFoundException(format("Unable to get response by user id %s", userId))))
+                                new GameCharacterNotFoundException(
+                                        format("Unable to get response by user id %s", userId))))
                 .onStatus(HttpStatus::isError, this::mapErrorResponses)
                 .bodyToMono(GameCharacter.class);
     }
@@ -62,7 +66,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         String coreBaseUrl = getCoreBaseUrl();
 
         final String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
-        return buildWebClient(getAuthHeaders().getRequestId(), getAuthHeaders().getAuthToken(), url)
+        return buildWebClient(url)
                 .post()
                 .body(BodyInserters.fromObject(gameCharacter))
                 .retrieve()
@@ -70,11 +74,14 @@ public class CoreWebClientImpl implements CoreWebClient {
                 .bodyToMono(GameCharacter.class);
     }
 
-    private WebClient buildWebClient(String requestId, String token, String url) {
+    private WebClient buildWebClient(String url) {
         return WebClient.builder()
                 .baseUrl(url)
                 .filter(loggingFilter)
-                .defaultHeader(REQUEST_ID_HEADER_NAME, requestId)
+                .defaultHeaders(httpHeaders -> httpHeaders
+                        .putAll(Map.of(
+                                REQUEST_ID, singletonList(getAuthHeaders().getRequestId()),
+                                AUTHORIZATION, singletonList(getAuthHeaders().getAuthToken()))))
                 .build();
     }
 
@@ -90,6 +97,6 @@ public class CoreWebClientImpl implements CoreWebClient {
 
     private Mono<? extends Throwable> mapErrorResponses(ClientResponse clientResponse) {
         return Mono.error(new InternalCommunicationException(format("Internal communication failure: status %s body %s",
-                clientResponse.statusCode(),clientResponse.bodyToMono(HttpErrorMessage.class))));
+                clientResponse.statusCode(), clientResponse.bodyToMono(HttpErrorMessage.class))));
     }
 }

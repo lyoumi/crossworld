@@ -6,7 +6,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 
 import com.crossworld.web.data.input.PlayerCharacterInput;
 import com.crossworld.web.data.internal.character.GameCharacter;
-import com.crossworld.web.resources.GameRequestHandler;
+import com.crossworld.web.handlers.GameRequestHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;

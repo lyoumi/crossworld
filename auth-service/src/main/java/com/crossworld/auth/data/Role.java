@@ -40,5 +40,4 @@ public class Role {
                     @JoinColumn(name = "permission_id")
             })
     private Set<Authority> permissions;
-
 }
