@@ -6,7 +6,9 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 
 import com.crossworld.web.data.input.PlayerCharacterInput;
 import com.crossworld.web.data.internal.character.GameCharacter;
+import com.crossworld.web.handlers.AccountRequestHandler;
 import com.crossworld.web.handlers.GameRequestHandler;
+import com.crossworld.web.security.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -17,13 +19,17 @@ import reactor.core.publisher.Mono;
 public class RouterFunctionConfiguration {
 
     @Bean
-    public RouterFunction routerFunction(GameRequestHandler gameRequestHandler) {
+    public RouterFunction routerFunction(GameRequestHandler gameRequestHandler,
+            AccountRequestHandler accountRequestHandler) {
         return route(GET("/private/rest/game/{id}"), request ->
                         ServerResponse.ok().body(Mono.justOrEmpty(request.pathVariable("id"))
                                 .flatMap(gameRequestHandler::getUserGameCharacter), GameCharacter.class))
                 .andRoute(POST("/private/rest/game"), request ->
                         ServerResponse.ok().body(request.bodyToMono(PlayerCharacterInput.class)
-                                .flatMap(gameRequestHandler::createGameCharacter), GameCharacter.class));
+                                .flatMap(gameRequestHandler::createGameCharacter), GameCharacter.class))
+                .andRoute(GET("/private/auth/user/my"), request ->
+                        ServerResponse.ok().body(Mono.justOrEmpty(accountRequestHandler.getUserDetails())
+                                .flatMap(userMono -> userMono), User.class));
     }
 
 }

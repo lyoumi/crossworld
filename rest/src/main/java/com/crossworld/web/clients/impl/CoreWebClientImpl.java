@@ -12,6 +12,7 @@ import com.crossworld.web.errors.exceptions.InternalCommunicationException;
 import com.crossworld.web.errors.exceptions.ServiceNotAvailableException;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import com.crossworld.web.filters.OutgoingRequestResponseLoggingFilter;
+import com.crossworld.web.security.AuthHeaders;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,15 +51,17 @@ public class CoreWebClientImpl implements CoreWebClient {
         String coreBaseUrl = getCoreBaseUrl();
 
         final String url = format(GET_CHARACTER_FORMAT, coreBaseUrl, userId);
-        return buildWebClient(url)
-                .get()
-                .retrieve()
-                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
-                        clientResponse -> Mono.error(
-                                new GameCharacterNotFoundException(
-                                        format("Unable to get response by user id %s", userId))))
-                .onStatus(HttpStatus::isError, this::mapErrorResponses)
-                .bodyToMono(GameCharacter.class);
+        return getAuthHeaders()
+                .flatMap(authHeaders ->
+                        buildWebClient(url, authHeaders)
+                                .get()
+                                .retrieve()
+                                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
+                                        clientResponse -> Mono.error(
+                                                new GameCharacterNotFoundException(
+                                                        format("Unable to get response by user id %s", userId))))
+                                .onStatus(HttpStatus::isError, this::mapErrorResponses)
+                                .bodyToMono(GameCharacter.class));
     }
 
     @Override
@@ -66,25 +69,27 @@ public class CoreWebClientImpl implements CoreWebClient {
         String coreBaseUrl = getCoreBaseUrl();
 
         final String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
-        return buildWebClient(url)
-                .post()
-                .body(BodyInserters.fromObject(gameCharacter))
-                .retrieve()
-                .onStatus(HttpStatus::isError, this::mapErrorResponses)
-                .bodyToMono(GameCharacter.class);
+
+        return getAuthHeaders()
+                .flatMap(authHeaders ->
+                        buildWebClient(url, authHeaders)
+                                .post()
+                                .body(BodyInserters.fromObject(gameCharacter))
+                                .retrieve()
+                                .onStatus(HttpStatus::isError, this::mapErrorResponses)
+                                .bodyToMono(GameCharacter.class));
     }
 
-    private WebClient buildWebClient(String url) {
+    private WebClient buildWebClient(String url, AuthHeaders authHeaders) {
 
         return WebClient.builder()
                 .baseUrl(url)
                 .filter(loggingFilter)
                 .defaultHeaders(httpHeaders ->
-                        getAuthHeaders()
-                                .doOnNext(headers -> httpHeaders.putAll(
-                                        Map.of(
-                                                REQUEST_ID, singletonList(headers.getRequestId()),
-                                                AUTHORIZATION, singletonList(headers.getAuthToken())))))
+                        httpHeaders.putAll(
+                                Map.of(
+                                        REQUEST_ID, singletonList(authHeaders.getRequestId()),
+                                        AUTHORIZATION, singletonList(authHeaders.getAuthToken()))))
                 .build();
     }
 
