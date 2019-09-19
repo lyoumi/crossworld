@@ -1,6 +1,7 @@
 package com.crossworld.web.configuration;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
@@ -10,6 +11,7 @@ import com.crossworld.web.errors.exceptions.BattleInfoNotFoundException;
 import com.crossworld.web.errors.exceptions.CharacterNotFoundException;
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
 import com.crossworld.web.errors.exceptions.MonsterNotFoundException;
+import com.crossworld.web.errors.exceptions.UnauthorizedTokenException;
 import com.crossworld.web.errors.handlers.CommonExceptionHandler;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -39,6 +41,11 @@ public class ExceptionHandlingConfiguration {
                                     .body(fromObject(new HttpErrorMessage(1014000,
                                             BAD_REQUEST.getReasonPhrase(),
                                             exception.getMessage()))),
+                    UnauthorizedTokenException.class, exception ->
+                            ServerResponse.status(FORBIDDEN)
+                                    .body(fromObject(new HttpErrorMessage(1014030,
+                                            FORBIDDEN.getReasonPhrase(),
+                                            FORBIDDEN.getReasonPhrase()))),
                     CharacterNotFoundException.class, exception ->
                             ServerResponse.status(NOT_FOUND)
                                     .body(fromObject(new HttpErrorMessage(1014040,
