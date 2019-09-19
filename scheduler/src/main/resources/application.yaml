@@ -16,6 +16,12 @@ services:
   core:
     instance:
       name: core
+  auth:
+    instance:
+      name: auth_server
+service.user:
+  username: superman
+  password: 12345
 
 management:
   endpoints:

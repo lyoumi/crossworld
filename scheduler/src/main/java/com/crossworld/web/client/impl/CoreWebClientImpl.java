@@ -1,7 +1,9 @@
 package com.crossworld.web.client.impl;
 
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 import static java.util.UUID.randomUUID;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
@@ -37,6 +39,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -62,6 +65,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
     private final LoadBalancerClient loadBalancerClient;
     private final OutgoingRequestResponseLoggingFilter loggingFilter;
+    private final AuthWebClientImpl authWebClient;
 
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {
@@ -71,16 +75,19 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         String url = format(ALL_CHARACTERS_FORMAT, coreBaseUrl);
 
-        return buildWebClient(requestId, url)
-                .get()
-                .header(REQUEST_ID_HEADER_NAME, requestId)
-                .accept(APPLICATION_STREAM_JSON)
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
-                .bodyToFlux(GameCharacter.class)
-                .doOnError(exception ->
-                        log.error("Unable to process response {} from service {{} : {}}: {}",
-                                requestId, GET, url, exception));
+        return authWebClient.buildAuthToken(requestId)
+                .flux()
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .get()
+                        .header(REQUEST_ID_HEADER_NAME, requestId)
+                        .accept(APPLICATION_STREAM_JSON)
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, GET))
+                        .bodyToFlux(GameCharacter.class)
+                        .doOnError(exception ->
+                                log.error("Unable to process response {} from service {{} : {}}: {}",
+                                        requestId, GET, url, exception)));
     }
 
     @Override
@@ -90,12 +97,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .put()
-                .body(BodyInserters.fromObject(gameCharacter))
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, PUT))
-                .bodyToMono(GameCharacter.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .put()
+                        .body(BodyInserters.fromObject(gameCharacter))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, PUT))
+                        .bodyToMono(GameCharacter.class));
     }
 
     @Override
@@ -105,12 +114,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ADVENTURE_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .post()
-                .body(BodyInserters.fromObject(adventure))
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, POST))
-                .bodyToMono(Adventure.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .post()
+                        .body(BodyInserters.fromObject(adventure))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, POST))
+                        .bodyToMono(Adventure.class));
     }
 
     @Override
@@ -120,12 +131,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ADVENTURE_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .put()
-                .body(BodyInserters.fromObject(adventure))
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, PUT))
-                .bodyToMono(Adventure.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .put()
+                        .body(BodyInserters.fromObject(adventure))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, PUT))
+                        .bodyToMono(Adventure.class));
     }
 
     @Override
@@ -137,14 +150,16 @@ public class CoreWebClientImpl implements CoreWebClient {
         String url = format(ADVENTURE_FORMAT, coreBaseUrl)
                 .concat("active/character/")
                 .concat(gameCharacterId);
-        return buildWebClient(requestId, url)
-                .get()
-                .retrieve()
-                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
-                        Mono.error(new AdventureNotFoundException(
-                                format("Active adventure with character id %s not found", gameCharacterId))))
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
-                .bodyToMono(Adventure.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .get()
+                        .retrieve()
+                        .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
+                                Mono.error(new AdventureNotFoundException(
+                                        format("Active adventure with character id %s not found", gameCharacterId))))
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, GET))
+                        .bodyToMono(Adventure.class));
     }
 
     @Override
@@ -154,12 +169,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(BATTLE_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .post()
-                .body(BodyInserters.fromObject(battleInfo))
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, POST))
-                .bodyToMono(BattleInfo.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .post()
+                        .body(BodyInserters.fromObject(battleInfo))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, POST))
+                        .bodyToMono(BattleInfo.class));
     }
 
     @Override
@@ -169,13 +186,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(BATTLE_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .put()
-                .body(BodyInserters.fromObject(battleInfo))
-                .retrieve()
-                .onStatus(HttpStatus::isError,
-                        clientResponse -> buildError(requestId, url, clientResponse, PUT))
-                .bodyToMono(BattleInfo.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .put()
+                        .body(BodyInserters.fromObject(battleInfo))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, PUT))
+                        .bodyToMono(BattleInfo.class));
     }
 
     @Override
@@ -187,14 +205,16 @@ public class CoreWebClientImpl implements CoreWebClient {
         String url = format(BATTLE_FORMAT, coreBaseUrl)
                 .concat("character/")
                 .concat(gameCharacterId);
-        return buildWebClient(requestId, url)
-                .get()
-                .retrieve()
-                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
-                        Mono.error(new BattleInfoNotFoundException(
-                                format("Battle info with character id %s not found", gameCharacterId))))
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
-                .bodyToMono(BattleInfo.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .get()
+                        .retrieve()
+                        .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
+                                Mono.error(new BattleInfoNotFoundException(
+                                        format("Battle info with character id %s not found", gameCharacterId))))
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, GET))
+                        .bodyToMono(BattleInfo.class));
     }
 
     @Override
@@ -205,11 +225,13 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         String url = format(BATTLE_FORMAT, coreBaseUrl).concat(id);
 
-        return buildWebClient(requestId, url)
-                .delete()
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, GET))
-                .bodyToMono(Void.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .delete()
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, GET))
+                        .bodyToMono(Void.class));
     }
 
     @Override
@@ -219,12 +241,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .post()
-                .body(BodyInserters.fromObject(monster))
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, POST))
-                .bodyToMono(Monster.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .post()
+                        .body(BodyInserters.fromObject(monster))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, POST))
+                        .bodyToMono(Monster.class));
     }
 
     @Override
@@ -234,12 +258,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .put()
-                .body(BodyInserters.fromObject(monster))
-                .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> buildError(requestId, url, clientResponse, PUT))
-                .bodyToMono(Monster.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .put()
+                        .body(BodyInserters.fromObject(monster))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, PUT))
+                        .bodyToMono(Monster.class));
     }
 
     @Override
@@ -249,12 +275,13 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
-        return buildWebClient(requestId, url)
-                .delete()
-                .retrieve()
-                .onStatus(HttpStatus::is5xxServerError,
-                        clientResponse -> buildError(requestId, url, clientResponse, DELETE))
-                .bodyToMono(Void.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .delete()
+                        .retrieve()
+                        .onStatus(HttpStatus::is5xxServerError,
+                                clientResponse -> buildError(requestId, url, clientResponse, DELETE))
+                        .bodyToMono(Void.class));
     }
 
     @Override
@@ -264,15 +291,16 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
-        return buildWebClient(requestId, url)
-                .get()
-                .retrieve()
-                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
-                        clientResponse -> Mono.error(new MonsterNotFoundException(
-                                format("Monster with id %s not found", id))))
-                .onStatus(HttpStatus::isError,
-                        clientResponse -> buildError(requestId, url, clientResponse, GET))
-                .bodyToMono(Monster.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .get()
+                        .retrieve()
+                        .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
+                                clientResponse -> Mono.error(new MonsterNotFoundException(
+                                        format("Monster with id %s not found", id))))
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, GET))
+                        .bodyToMono(Monster.class));
     }
 
     @Override
@@ -282,13 +310,14 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(AWARDS_FORMAT, coreBaseUrl);
-        return buildWebClient(requestId, url)
-                .post()
-                .body(BodyInserters.fromObject(awards))
-                .retrieve()
-                .onStatus(HttpStatus::isError,
-                        clientResponse -> buildError(requestId, url, clientResponse, POST))
-                .bodyToMono(Awards.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .post()
+                        .body(BodyInserters.fromObject(awards))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, POST))
+                        .bodyToMono(Awards.class));
     }
 
     @Override
@@ -298,15 +327,16 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
-        return buildWebClient(requestId, url)
-                .get()
-                .retrieve()
-                .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
-                        Mono.error(new AwardsNotFoundException(
-                                format("Awards with id %s not found", id))))
-                .onStatus(HttpStatus::isError,
-                        clientResponse -> buildError(requestId, url, clientResponse, GET))
-                .bodyToMono(Awards.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .get()
+                        .retrieve()
+                        .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND), clientResponse ->
+                                Mono.error(new AwardsNotFoundException(
+                                        format("Awards with id %s not found", id))))
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, GET))
+                        .bodyToMono(Awards.class));
     }
 
     @Override
@@ -316,19 +346,23 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         var url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
-        return buildWebClient(requestId, url)
-                .delete()
-                .retrieve()
-                .onStatus(HttpStatus::isError,
-                        clientResponse -> buildError(requestId, url, clientResponse, DELETE))
-                .bodyToMono(Void.class);
+        return authWebClient.buildAuthToken(requestId)
+                .flatMap(token -> buildWebClient(requestId, url, token)
+                        .delete()
+                        .retrieve()
+                        .onStatus(HttpStatus::isError,
+                                clientResponse -> buildError(requestId, url, clientResponse, DELETE))
+                        .bodyToMono(Void.class));
     }
 
-    private WebClient buildWebClient(String requestId, String url) {
+    private WebClient buildWebClient(String requestId, String url, String token) {
         return WebClient.builder()
                 .filter(loggingFilter)
                 .baseUrl(url)
-                .defaultHeaders(httpHeaders -> httpHeaders.add(REQUEST_ID_HEADER_NAME, requestId))
+                .defaultHeaders(httpHeaders -> httpHeaders.putAll(
+                        Map.of(
+                                REQUEST_ID_HEADER_NAME, singletonList(requestId),
+                                AUTHORIZATION, singletonList(token))))
                 .build();
     }
 
