@@ -1,7 +1,5 @@
 package com.crossworld.web.security;
 
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-
 import com.crossworld.web.clients.AuthWebClient;
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
 import com.crossworld.web.errors.exceptions.UnauthorizedException;
@@ -20,6 +18,7 @@ import java.util.Optional;
 public class AuthFilter implements WebFilter {
 
     private static final String REQUEST_ID = "request_id";
+    private static final String AUTHORIZATION = "Authorization";
 
     private final AuthWebClient authWebClient;
 

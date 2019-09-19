@@ -1,9 +1,11 @@
 package com.crossworld.auth.security.impl;
 
 import com.crossworld.auth.data.User;
+import com.crossworld.auth.errors.exceptions.TokenExpirationException;
 import com.crossworld.auth.errors.exceptions.TokenValidationException;
 import com.crossworld.auth.security.JwtTokenUtil;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
@@ -57,6 +59,8 @@ public class JwtTokenUtilImpl implements JwtTokenUtil {
             return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
         } catch (SignatureException e) {
             throw new TokenValidationException("Existing token is invalid", e);
+        } catch (ExpiredJwtException e) {
+            throw new TokenExpirationException("Existing token is expired", e);
         }
     }
 

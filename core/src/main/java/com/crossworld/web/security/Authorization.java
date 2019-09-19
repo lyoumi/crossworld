@@ -19,7 +19,7 @@ public class Authorization implements Authentication {
     }
 
     @Override
-    public AuthHeaders getCredentials() {
+    public Object getCredentials() {
         return authHeaders;
     }
 

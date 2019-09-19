@@ -1,25 +1,24 @@
-package com.crossworld.auth.configuration;
+package com.crossworld.web.configuration;
 
+import com.crossworld.web.security.AuthFilter;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
-@Configuration
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
+            AuthFilter cwdAuthFilter,
             ServerHttpSecurity http) {
-        return http.authorizeExchange()
-                .anyExchange()
-                .permitAll()
-                .and()
-                .httpBasic().disable()
-                .formLogin().disable()
+        return http
                 .csrf().disable()
+                .addFilterAt(cwdAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .authorizeExchange().anyExchange().permitAll()
+                .and()
                 .build();
     }
 }

@@ -5,12 +5,15 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 import com.crossworld.web.errors.exceptions.GameCharacterNotFoundException;
 import com.crossworld.web.errors.exceptions.MissingHeaderException;
+import com.crossworld.web.errors.exceptions.SecurityContextEmptyException;
 import com.crossworld.web.errors.exceptions.ServiceNotAvailableException;
 import com.crossworld.web.errors.exceptions.TokenValidationException;
+import com.crossworld.web.errors.exceptions.UnauthorizedTokenException;
 import com.crossworld.web.errors.handlers.CommonExceptionHandler;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,6 +44,10 @@ public class ExceptionHandlingConfiguration {
                                             BAD_REQUEST.getReasonPhrase(),
                                             exception.getMessage()))),
 
+                    UnauthorizedTokenException.class, exception -> ServerResponse.status(UNAUTHORIZED).body(fromObject(
+                            new HttpErrorMessage(1024010, UNAUTHORIZED.getReasonPhrase(),
+                                    UNAUTHORIZED.getReasonPhrase()))),
+
                     TokenValidationException.class, exception -> ServerResponse.status(FORBIDDEN)
                             .body(fromObject(new HttpErrorMessage(1024030, FORBIDDEN.getReasonPhrase(),
                                     FORBIDDEN.getReasonPhrase()))),
@@ -50,6 +57,14 @@ public class ExceptionHandlingConfiguration {
                                     .body(fromObject(new HttpErrorMessage(1024040,
                                             NOT_FOUND.getReasonPhrase(),
                                             exception.getMessage()))),
+
+
+                    SecurityContextEmptyException.class, exception ->
+                            ServerResponse.status(INTERNAL_SERVER_ERROR)
+                                    .body(fromObject(new HttpErrorMessage(1025001,
+                                            INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                                            INTERNAL_SERVER_ERROR.getReasonPhrase()))),
+
                     ServiceNotAvailableException.class, exception ->
                             ServerResponse.status(SERVICE_UNAVAILABLE)
                                     .body(fromObject(new HttpErrorMessage(1025030,

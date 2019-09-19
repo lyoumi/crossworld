@@ -1,12 +1,12 @@
 package com.crossworld.web.clients.impl;
 
 import static java.lang.String.format;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 import com.crossworld.web.clients.AuthWebClient;
 import com.crossworld.web.errors.exceptions.InternalCommunicationException;
 import com.crossworld.web.errors.exceptions.ServiceNotAvailableException;
 import com.crossworld.web.errors.exceptions.TokenValidationException;
-import com.crossworld.web.errors.exceptions.UnauthorizedTokenException;
 import com.crossworld.web.errors.http.HttpErrorMessage;
 import com.crossworld.web.filters.OutgoingRequestResponseLoggingFilter;
 import com.crossworld.web.security.User;
@@ -25,13 +25,12 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-@Component
 @RequiredArgsConstructor
+@Component
 public class AuthWebClientImpl implements AuthWebClient {
 
     private static final String VALIDATE_TOKEN_URL_FORMAT = "%s/private/auth/validate";
 
-    private static final String AUTHORIZATION = "Authorization";
     private static final String REQUEST_ID_HEADER_NAME = "request_id";
 
     @Value("${services.auth.instance.name}")
@@ -49,8 +48,6 @@ public class AuthWebClientImpl implements AuthWebClient {
                 .retrieve()
                 .onStatus(HttpStatus.FORBIDDEN::equals,
                         clientResponse -> Mono.just(new TokenValidationException("Unable to validate user token")))
-                .onStatus(HttpStatus.UNAUTHORIZED::equals,
-                        clientResponse -> Mono.just(new UnauthorizedTokenException("Unable to authorize user token")))
                 .onStatus(HttpStatus::is5xxServerError, this::mapErrorResponses)
                 .bodyToMono(User.class);
     }

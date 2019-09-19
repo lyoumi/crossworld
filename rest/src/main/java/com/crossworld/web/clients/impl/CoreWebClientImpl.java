@@ -3,7 +3,6 @@ package com.crossworld.web.clients.impl;
 import static com.crossworld.web.security.SecurityUtils.getAuthHeaders;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import com.crossworld.web.clients.CoreWebClient;
@@ -35,6 +34,7 @@ import java.util.Optional;
 public class CoreWebClientImpl implements CoreWebClient {
 
     private static final String REQUEST_ID = "request_id";
+    private static final String AUTHORIZATION = "Authorization";
 
     private static final String GET_CHARACTER_FORMAT = "%s/private/character/user/%s/";
     private static final String SAVE_CHARACTER_FORMAT = "%s/private/character/";
@@ -75,13 +75,16 @@ public class CoreWebClientImpl implements CoreWebClient {
     }
 
     private WebClient buildWebClient(String url) {
+
         return WebClient.builder()
                 .baseUrl(url)
                 .filter(loggingFilter)
-                .defaultHeaders(httpHeaders -> httpHeaders
-                        .putAll(Map.of(
-                                REQUEST_ID, singletonList(getAuthHeaders().getRequestId()),
-                                AUTHORIZATION, singletonList(getAuthHeaders().getAuthToken()))))
+                .defaultHeaders(httpHeaders ->
+                        getAuthHeaders()
+                                .doOnNext(headers -> httpHeaders.putAll(
+                                        Map.of(
+                                                REQUEST_ID, singletonList(headers.getRequestId()),
+                                                AUTHORIZATION, singletonList(headers.getAuthToken())))))
                 .build();
     }
 
