@@ -1,5 +1,6 @@
 plugins {
     id 'org.springframework.boot' version '2.1.6.RELEASE'
+    id 'org.springframework.security' version '5.1.5.RELEASE'
     id 'java'
 }
 
@@ -22,9 +23,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.security:spring-security-oauth2-client:5.1.5.RELEASE'
-    implementation 'org.springframework.security:spring-security-oauth2-resource-server:5.1.5.RELEASE'
-    implementation 'org.springframework.security:spring-security-oauth2-jose:5.1.5.RELEASE'
+    implementation 'org.springframework.security:spring-security-oauth2-client'
+    implementation 'org.springframework.security:spring-security-oauth2-resource-server'
+    implementation 'org.springframework.security:spring-security-oauth2-jose'
     implementation "io.jsonwebtoken:jjwt:${jjwtVersion}"
     implementation "org.projectlombok:lombok:${lombokVersion}"
     compile group: 'com.zaxxer', name: 'HikariCP', version: "$hikariVersion"
