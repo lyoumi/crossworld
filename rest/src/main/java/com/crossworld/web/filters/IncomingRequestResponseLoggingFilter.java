@@ -18,19 +18,18 @@ public class IncomingRequestResponseLoggingFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        var request = exchange.getRequest();
-        logRequest(request);
-
-        var requestId = request.getHeaders().get(REQUEST_ID_HEADER);
-
-        //TODO: Implement security check and set header data to context
-        if (requestId == null) {
-            throw new MissingHeaderException(String.format("Required header is missing: %s", REQUEST_ID_HEADER));
-        } else {
-            exchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, requestId.toString());
-        }
-
-        return chain.filter(exchange).doOnSuccess(aVoid -> logResponse(request, exchange.getResponse()));
+        return Mono.just(exchange.getRequest())
+                .doOnSuccess(this::logRequest)
+                .map(serverHttpRequest -> serverHttpRequest.getHeaders().get(REQUEST_ID_HEADER))
+                .switchIfEmpty(Mono.error(new MissingHeaderException(String.format("Required header is missing: %s", REQUEST_ID_HEADER))))
+                .doOnSuccess(header -> exchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, header.toString()))
+                .then(chain.filter(exchange))
+                .doOnSuccess(aVoid -> logResponse(exchange.getRequest(), exchange.getResponse()))
+                .doOnError(throwable -> log.error("Unable to process request {} {} {}",
+                        exchange.getRequest().getHeaders().get(REQUEST_ID_HEADER),
+                        exchange.getRequest().getMethod(),
+                        exchange.getRequest().getURI(),
+                        throwable));
     }
 
     private void logResponse(ServerHttpRequest request, ServerHttpResponse response) {
