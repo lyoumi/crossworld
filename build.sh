@@ -1,9 +1,12 @@
-export JAVA_HOME=`/usr/libexec/java_home -v 11`; java -version
-cd auth-service/
-gradle build
-cd ../core/
-gradle build
-cd ../scheduler/
-gradle build
-cd ../rest/
-gradle build
+build() {
+    cd ~/IdeaProjects/crossworld/rest/
+    gradle build
+    cd ~/IdeaProjects/crossworld/scheduler/
+    gradle build
+    cd ~/IdeaProjects/crossworld/auth-service/
+    gradle build
+    cd ~/IdeaProjects/crossworld/core/
+    gradle build
+}
+
+build
