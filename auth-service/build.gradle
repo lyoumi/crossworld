@@ -1,6 +1,5 @@
 plugins {
     id 'org.springframework.boot' version '2.1.6.RELEASE'
-    id 'org.springframework.security' version '5.1.5.RELEASE'
     id 'java'
 }
 
@@ -22,14 +21,19 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.security:spring-security-oauth2-client'
     implementation 'org.springframework.security:spring-security-oauth2-resource-server'
     implementation 'org.springframework.security:spring-security-oauth2-jose'
     implementation "io.jsonwebtoken:jjwt:${jjwtVersion}"
-    implementation "org.projectlombok:lombok:${lombokVersion}"
+
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
     compile group: 'com.zaxxer', name: 'HikariCP', version: "$hikariVersion"
     runtimeOnly 'mysql:mysql-connector-java'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
 }

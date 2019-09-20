@@ -57,7 +57,7 @@ public class User {
     private boolean isCredentialsNonExpired;
 
     @Column(name = "is_enabled")
-    private boolean isEnabled;
+    private boolean enabled;
 
     @Column(name = "email")
     @Email(message = "Pls, enter valid email")
