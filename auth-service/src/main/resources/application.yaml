@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:mysql://localhost:3306/CWdSecurity
+    url: jdbc:mysql://localhost:3306/auth_store
     username: auth_user
     password: r2d2
   application:

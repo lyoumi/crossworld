@@ -14,4 +14,8 @@ public class GameCharacter {
     private CharacterStats stats;
     private GameInventory gameInventory;
     private String userId;
+
+    public boolean hasEvent() {
+        return inAdventure || isFighting || isResting;
+    }
 }

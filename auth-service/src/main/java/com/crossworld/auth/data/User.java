@@ -40,11 +40,11 @@ public class User {
     private String password;
 
     @Column(name = "name")
-    @Size(min = 2, max = 15)
+    @Size(min = 2, max = 15, message = "name size must be between 2 and 15")
     private String name;
 
     @Column(name = "surname")
-    @Size(min = 2, max = 15)
+    @Size(min = 2, max = 15, message = "surname size must be between 2 and 15")
     private String surname;
 
     @Column(name = "is_account_non_expired")

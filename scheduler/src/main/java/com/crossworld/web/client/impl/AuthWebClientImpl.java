@@ -42,7 +42,8 @@ public class AuthWebClientImpl implements AuthWebClient {
                 .post()
                 .body(fromObject(serviceUser))
                 .retrieve()
-                .bodyToMono(String.class);
+                .bodyToMono(String.class)
+                .retry(3, throwable -> true);
     }
 
     private String getAuthBaseUrl() {

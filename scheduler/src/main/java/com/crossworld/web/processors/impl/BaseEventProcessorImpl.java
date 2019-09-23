@@ -1,16 +1,15 @@
 package com.crossworld.web.processors.impl;
 
 import com.crossworld.web.client.CoreWebClient;
-import com.crossworld.web.data.events.adventure.AdventureStatus;
+import com.crossworld.web.data.character.GameCharacter;
 import com.crossworld.web.data.events.EventType;
-import com.crossworld.web.data.events.adventure.Adventure;
 import com.crossworld.web.data.events.awards.Awards;
 import com.crossworld.web.data.events.battle.BattleInfo;
 import com.crossworld.web.data.events.battle.Monster;
 import com.crossworld.web.data.events.battle.MonsterType;
-import com.crossworld.web.data.character.GameCharacter;
 import com.crossworld.web.processors.BaseEventProcessor;
 import com.crossworld.web.processors.EventProcessor;
+import com.crossworld.web.processors.util.EventGeneratorUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -28,10 +27,6 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
 
     private static final Random RANDOM = new Random();
 
-    //TODO: FTCW-12. Rewrite it using real stories e.g. stored in DB
-    private static final String ADVENTURE_DESCRIPTION = "Some description";
-    private static final List<String> ADVENTURE_EVENTS = List.of("1st event", "2nd event", "3rd event", "Last event");
-
     private static final Map<EventType, List<EventType>> EVENT_GENERATION_RESTRICTION_MAP =
             Map.of(EventType.ADVENTURE, Collections.emptyList(),
                     EventType.BATTLE, List.of(EventType.ADVENTURE),
@@ -41,13 +36,13 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
     private final Map<EventType, Consumer<GameCharacter>> eventProcessors;
 
     private final CoreWebClient coreWebClient;
+    private final EventGeneratorUtils eventGeneratorUtils;
 
     public BaseEventProcessorImpl(CoreWebClient coreWebClient,
             EventProcessor battleEventProcessor,
             EventProcessor adventureEventProcessor,
-            EventProcessor healingEventProcessor) {
-        this.coreWebClient = coreWebClient;
-
+            EventProcessor healingEventProcessor,
+            EventGeneratorUtils eventGeneratorUtils) {
         eventProcessors = Map.of(
                 EventType.ADVENTURE, adventureEventProcessor::processEvent,
                 EventType.BATTLE, battleEventProcessor::processEvent,
@@ -55,7 +50,10 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
         );
         eventGenerator = Map.of(EventType.ADVENTURE, this::generateAdventure,
                 EventType.BATTLE, this::generateBattle,
-                EventType.REGENERATION, this::generateRegenerationEvent);;
+                EventType.REGENERATION, this::generateRegenerationEvent);
+
+        this.coreWebClient = coreWebClient;
+        this.eventGeneratorUtils = eventGeneratorUtils;
     }
 
     @Override
@@ -72,7 +70,9 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
                     .map(Entry::getKey)
                     .collect(Collectors.toList());
 
-            generateNewEvents(gc, existingCharacterEvents, activeEvents);
+            if (!gc.hasEvent()) {
+                generateNewEvents(gc, existingCharacterEvents, activeEvents);
+            }
             progressExistingEvents(gc, activeEvents);
         });
 
@@ -103,15 +103,13 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
 
     private void generateAdventure(GameCharacter gameCharacter) {
         var awards = new Awards(UUID.randomUUID().toString(),
-                RANDOM.nextInt(gameCharacter.getProgress().getLevel() * 10),
+                RANDOM.nextInt(gameCharacter.getProgress().getLevel() * 10)
+                        + gameCharacter.getProgress().getTargetExp() / 4,
                 RANDOM.nextInt(gameCharacter.getProgress().getLevel() * 10));
-        var adventure = new Adventure(UUID.randomUUID().toString(), gameCharacter.getId(),
-                ADVENTURE_DESCRIPTION, awards.getId(), AdventureStatus.IN_PROGRESS, ADVENTURE_EVENTS, 0);
-
-        gameCharacter.setInAdventure(true);
-
-        coreWebClient.createAdventure(adventure).subscribe();
-        coreWebClient.createAwards(awards).subscribe();
+        eventGeneratorUtils.generateAdventure(gameCharacter.getId(), awards.getId())
+                .doOnSuccess(adventure -> gameCharacter.setInAdventure(true))
+                .doOnSuccess(adventure -> coreWebClient.createAdventure(adventure).subscribe())
+                .subscribe(adventure -> coreWebClient.createAwards(awards).subscribe());
     }
 
     private void generateRegenerationEvent(GameCharacter gameCharacter) {
@@ -120,8 +118,8 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
 
     private void generateBattle(GameCharacter gameCharacter) {
         var monster = new Monster(UUID.randomUUID().toString(),
-                gameCharacter.getStats().getHitPoints() /2,
-                gameCharacter.getStats().getAttack() /2,
+                gameCharacter.getStats().getHitPoints() / 2,
+                gameCharacter.getStats().getAttack() / 2,
                 MonsterType.SOLDIER);
         var awards = new Awards(UUID.randomUUID().toString(), 42, 73);
         var battleInfo = new BattleInfo(UUID.randomUUID().toString(), gameCharacter.getId(),

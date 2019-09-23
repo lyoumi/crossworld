@@ -3,6 +3,10 @@ server:
 spring:
   application:
     name: scheduler
+  data:
+    mongodb:
+      port: 27018
+      database: adventures
 eureka:
   client:
     serviceUrl:
@@ -20,8 +24,9 @@ services:
     instance:
       name: auth_server
 service.user:
-  username: superman
+  username: service_user
   password: 12345
+
 
 management:
   endpoints:
