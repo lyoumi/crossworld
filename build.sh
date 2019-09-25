@@ -1,4 +1,5 @@
-build() {
+build_app()
+{
     cd ~/IdeaProjects/crossworld/rest/
     gradle build
     cd ~/IdeaProjects/crossworld/scheduler/
@@ -9,4 +10,4 @@ build() {
     gradle build
 }
 
-build
+build_app

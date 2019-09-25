@@ -1,5 +1,7 @@
 package com.crossworld.web.processors.impl;
 
+import static java.lang.String.format;
+
 import com.crossworld.web.client.CoreWebClient;
 import com.crossworld.web.data.character.CharacterStats;
 import com.crossworld.web.data.character.GameCharacter;
@@ -30,11 +32,11 @@ public class BattleEventProcessor implements EventProcessor {
         coreWebClient.getBattleInfoByCharacterId(gameCharacter.getId())
                 .subscribe(battleInfo ->
                         processBattle(battleInfo, gameCharacter)
-                        .subscribe(gc ->
-                                coreWebClient
-                                        .saveGameCharacter(gc)
-                                        .subscribeOn(Schedulers.parallel())
-                                        .subscribe())
+                                .subscribe(gc ->
+                                        coreWebClient
+                                                .saveGameCharacter(gc)
+                                                .subscribeOn(Schedulers.parallel())
+                                                .subscribe())
                 );
     }
 
@@ -46,6 +48,7 @@ public class BattleEventProcessor implements EventProcessor {
                     if (canFight(gameCharacter, characterStats, gameInventory, monster)) {
                         characterStats.setHitPoints(characterStats.getHitPoints() - monster.getAttack());
                         monster.setHitPoints(monster.getHitPoints() - characterStats.getAttack());
+                        gameCharacter.setCurrentAction(format("Fighting with monster, %s hp", monster.getHitPoints()));
                         if (monster.getHitPoints() < 1) {
                             removeMonster(gameCharacter, monster.getId(), battleInfo.getId());
                             coreWebClient.getAwardsById(battleInfo.getAwardsId())
@@ -62,7 +65,7 @@ public class BattleEventProcessor implements EventProcessor {
                         removeMonster(gameCharacter, monster.getId(), battleInfo.getId());
                     }
                 })
-        .thenReturn(gameCharacter);
+                .thenReturn(gameCharacter);
     }
 
     private void removeMonster(GameCharacter gameCharacter, String monsterId, String battleId) {
@@ -87,7 +90,7 @@ public class BattleEventProcessor implements EventProcessor {
                 gameInventory.setHealingHitPointItems(gameInventory.getHealingHitPointItems() - 1);
                 characterStats.setHitPoints(characterStats.getHitPoints() + 42);
             } else {
-                gameCharacter.setInAdventure(false);
+                gameCharacter.setFighting(false);
                 canFight = false;
             }
         }
