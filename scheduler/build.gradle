@@ -5,7 +5,7 @@ plugins {
 
 apply plugin: 'io.spring.dependency-management'
 
-group = 'com.crossworld.web'
+group = 'com.cwd.tg'
 sourceCompatibility = '11'
 
 repositories {
