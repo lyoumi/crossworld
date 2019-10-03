@@ -16,6 +16,13 @@ eureka:
     appname: ${spring.application.name}
     health-check-url-path: ${management.endpoints.web.base-path}/${management.endpoints.web.path-mapping.health}
 
+window:
+  delay: 10
+  size: 100
+
+scheduler:
+  delay: 300000
+
 services:
   core:
     instance:

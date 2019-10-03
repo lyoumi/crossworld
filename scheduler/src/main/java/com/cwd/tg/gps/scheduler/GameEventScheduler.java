@@ -3,8 +3,9 @@ package com.cwd.tg.gps.scheduler;
 import com.cwd.tg.gps.processors.BaseEventProcessor;
 import com.cwd.tg.gps.services.GameCharacterService;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,20 +16,25 @@ import java.time.Duration;
 @Slf4j
 @Configuration
 @EnableScheduling
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class GameEventScheduler {
+
+    @Value("${window.size}")
+    private int windowSize;
+    @Value("${window.delay}")
+    private int windowDelayTime;
 
     private final GameCharacterService gameCharacterService;
     private final BaseEventProcessor baseEventProcessor;
 
-    @Scheduled(cron = "5 * * * * ?")
+    @Scheduled(fixedDelayString = "${scheduler.delay}")
     public void scheduleGameEvent() {
         gameCharacterService.getAllGameCharacters()
                 .subscribeOn(Schedulers.elastic())
                 .doOnError(
                         throwable -> log.error("Something went wrong. Error during character processing.", throwable))
-                .window(100)
-                .delayElements(Duration.ofSeconds(10))
+                .window(windowSize)
+                .delayElements(Duration.ofSeconds(windowDelayTime), Schedulers.elastic())
                 .subscribe(gcm -> gcm.subscribe(baseEventProcessor::processCharacterEvents,
                         throwable -> log.error("Something went wrong", throwable)),
                         throwable -> log.error("Something went wrong", throwable));
