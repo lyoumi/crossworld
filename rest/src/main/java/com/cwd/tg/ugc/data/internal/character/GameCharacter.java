@@ -1,11 +1,9 @@
 package com.cwd.tg.ugc.data.internal.character;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class GameCharacter {
     private String id;
@@ -18,4 +16,18 @@ public class GameCharacter {
     private CharacterStats stats;
     private GameInventory gameInventory;
     private String userId;
+
+    public GameCharacter(String name, boolean inAdventure, boolean isFighting, boolean isResting,
+            String currentAction, CharacterProgress progress, CharacterStats stats,
+            GameInventory gameInventory, String userId) {
+        this.name = name;
+        this.inAdventure = inAdventure;
+        this.isFighting = isFighting;
+        this.isResting = isResting;
+        this.currentAction = currentAction;
+        this.progress = progress;
+        this.stats = stats;
+        this.gameInventory = gameInventory;
+        this.userId = userId;
+    }
 }

@@ -10,6 +10,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
+
 @Slf4j
 @Configuration
 @EnableScheduling
@@ -19,12 +21,16 @@ public class GameEventScheduler {
     private final GameCharacterService gameCharacterService;
     private final BaseEventProcessor baseEventProcessor;
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(cron = "5 * * * * ?")
     public void scheduleGameEvent() {
         gameCharacterService.getAllGameCharacters()
                 .subscribeOn(Schedulers.elastic())
-                .doOnError(throwable -> log.error("Something went wrong. Error during character processing.", throwable))
-                .subscribe(baseEventProcessor::processCharacterEvents,
+                .doOnError(
+                        throwable -> log.error("Something went wrong. Error during character processing.", throwable))
+                .window(100)
+                .delayElements(Duration.ofSeconds(10))
+                .subscribe(gcm -> gcm.subscribe(baseEventProcessor::processCharacterEvents,
+                        throwable -> log.error("Something went wrong", throwable)),
                         throwable -> log.error("Something went wrong", throwable));
     }
 }

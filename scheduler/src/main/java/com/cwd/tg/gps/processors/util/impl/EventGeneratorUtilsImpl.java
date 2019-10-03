@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.Random;
-import java.util.UUID;
 
 @AllArgsConstructor
 @Component
@@ -26,7 +25,7 @@ public class EventGeneratorUtilsImpl implements EventGeneratorUtils {
         return adventureRepository.findAll()
                 .collectList()
                 .map(adventureEntities -> adventureEntities.get(RANDOM.nextInt(adventureEntities.size())))
-                .map(adventureEntity -> new Adventure(UUID.randomUUID().toString(), characterId,
+                .map(adventureEntity -> new Adventure(characterId,
                         adventureEntity.getDescription(), awardsId, AdventureStatus.IN_PROGRESS,
                         adventureEntity.getEvents(), START_ADVENTURE_STEP_NUMBER));
     }

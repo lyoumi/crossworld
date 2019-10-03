@@ -11,7 +11,7 @@ public class SecurityUtils {
 
     public static Mono<AuthHeaders> getAuthHeaders() {
         return getSecurityContext()
-                .map(securityContext -> securityContext.getAuthentication())
+                .map(SecurityContext::getAuthentication)
                 .map(Authentication::getCredentials)
                 .cast(AuthHeaders.class)
                 .doOnSuccess(authHeaders -> log.info("Auth headers: {}", authHeaders));

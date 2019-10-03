@@ -9,6 +9,7 @@ import com.cwd.tg.ugc.data.internal.character.GameCharacter;
 import com.cwd.tg.ugc.data.internal.character.GameInventory;
 import com.cwd.tg.ugc.handlers.GameRequestHandler;
 import com.cwd.tg.ugc.services.GameControllerService;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -22,7 +23,7 @@ public class GameRequestHandlerImpl implements GameRequestHandler {
     @Override
     public Mono<GameCharacter> createGameCharacter(PlayerCharacterInput playerCharacterInput) {
         return gameControllerService.saveCharacter(
-                new GameCharacter(randomUUID().toString(), playerCharacterInput.getName(),
+                new GameCharacter(playerCharacterInput.getName(),
                         false, false, false, "",
                         new CharacterProgress(0, 1, 100),
                         new CharacterStats(10, 10, 10, 200, 100, 30),

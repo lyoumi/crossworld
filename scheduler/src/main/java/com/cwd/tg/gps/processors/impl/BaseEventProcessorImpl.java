@@ -71,10 +71,10 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
                     .map(Entry::getKey)
                     .collect(Collectors.toList());
 
-            if (!gc.hasEvent()) {
-                generateNewEvents(gc, existingCharacterEvents, activeEvents);
+            if (gc.hasEvent()) {
+                progressExistingEvents(gc, activeEvents);
             }
-            progressExistingEvents(gc, activeEvents);
+            generateNewEvents(gc, existingCharacterEvents, activeEvents);
         });
 
     }
@@ -96,7 +96,6 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
             if (eventGenerationRestrictions.containsAll(activeEvents)
                     && activeEvents.containsAll(eventGenerationRestrictions) && RANDOM.nextBoolean()) {
                 eventGenerator.get(eventType).accept(gc);
-                coreWebClient.saveGameCharacter(gc).subscribe();
             }
         });
     }
@@ -109,8 +108,10 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
                 RANDOM.nextInt(gameCharacter.getProgress().getLevel() * 10));
         eventGeneratorUtils.generateAdventure(gameCharacter.getId(), awards.getId())
                 .doOnSuccess(adventure -> gameCharacter.setInAdventure(true))
-                .doOnSuccess(adventure -> coreWebClient.createAdventure(adventure).subscribe())
-                .subscribe(adventure -> coreWebClient.createAwards(awards).subscribe());
+                .subscribe(adventure -> coreWebClient.createAdventure(adventure)
+                        .subscribe(ad -> coreWebClient.createAwards(awards)
+                                .subscribe(aw -> coreWebClient.saveGameCharacter(gameCharacter)
+                                        .subscribe())));
     }
 
     private void generateRegenerationEvent(GameCharacter gameCharacter) {
@@ -118,20 +119,20 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
     }
 
     private void generateBattle(GameCharacter gameCharacter) {
-        var monster = new Monster(UUID.randomUUID().toString(),
+        var monster = new Monster(
                 gameCharacter.getStats().getHitPoints() / 2,
                 gameCharacter.getStats().getAttack() / 2,
                 MonsterType.SOLDIER);
         var awards = new Awards(UUID.randomUUID().toString(), 42, 73);
-        var battleInfo = new BattleInfo(UUID.randomUUID().toString(), gameCharacter.getId(),
-                monster.getId(), awards.getId());
-
         gameCharacter.setFighting(true);
 
-        coreWebClient.createMonster(monster).subscribe(m -> {
-            coreWebClient.createBattleInfo(battleInfo).subscribe(bI -> {
-                coreWebClient.createAwards(awards).subscribe();
-            });
-        });
+        coreWebClient.createMonster(monster)
+                .subscribe(m -> coreWebClient.createAwards(awards)
+                        .subscribe(bI ->
+                                coreWebClient.createBattleInfo(
+                                        new BattleInfo(UUID.randomUUID().toString(), gameCharacter.getId(),
+                                                m.getId(), awards.getId()))
+                                        .subscribe(aw -> coreWebClient.saveGameCharacter(gameCharacter)
+                                                .subscribe())));
     }
 }
