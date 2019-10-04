@@ -5,19 +5,20 @@ import static org.springframework.web.reactive.function.BodyInserters.fromObject
 
 import com.cwd.tg.gps.client.AuthWebClient;
 import com.cwd.tg.gps.exception.ServiceNotAvailableException;
-import com.cwd.tg.gps.filters.OutgoingRequestResponseLoggingFilter;
 import com.cwd.tg.gps.security.ServiceUser;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 @Component
 @RequiredArgsConstructor
@@ -30,8 +31,8 @@ public class AuthWebClientImpl implements AuthWebClient {
     private String authInstanceName;
 
     private final LoadBalancerClient loadBalancerClient;
-    private final OutgoingRequestResponseLoggingFilter loggingFilter;
     private final ServiceUser serviceUser;
+    private final WebClient webClient;
 
     @Override
     public Mono<String> buildAuthToken(String requestId) {
@@ -39,12 +40,18 @@ public class AuthWebClientImpl implements AuthWebClient {
 
         String url = format(AUTH_FORMAT, coreBaseUrl);
 
-        return buildWebClient(requestId, url)
+        return webClient
                 .post()
+                .uri(url)
+                .headers(getHttpHeaders(requestId))
                 .body(fromObject(serviceUser))
                 .retrieve()
                 .bodyToMono(String.class)
                 .retry(3, throwable -> true);
+    }
+
+    private Consumer<HttpHeaders> getHttpHeaders(String requestId) {
+        return httpHeaders -> httpHeaders.add(REQUEST_ID_HEADER_NAME, requestId);
     }
 
     private String getAuthBaseUrl() {
@@ -54,13 +61,5 @@ public class AuthWebClientImpl implements AuthWebClient {
                 .orElseThrow(() ->
                         new ServiceNotAvailableException(
                                 format(SERVICE_NOT_AVAILABLE_EXCEPTION_MESSAGE, authInstanceName)));
-    }
-
-    private WebClient buildWebClient(String requestId, String url) {
-        return WebClient.builder()
-                .filter(loggingFilter)
-                .baseUrl(url)
-                .defaultHeaders(httpHeaders -> httpHeaders.add(REQUEST_ID_HEADER_NAME, requestId))
-                .build();
     }
 }
