@@ -1,8 +1,8 @@
 package com.cwd.tg.ugc.security;
 
 import com.cwd.tg.ugc.clients.AuthWebClient;
-import com.cwd.tg.ugc.errors.exceptions.MissingHeaderException;
 import com.cwd.tg.ugc.errors.exceptions.TokenValidationException;
+import com.cwd.tg.ugc.errors.exceptions.UnauthorizedTokenException;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +41,6 @@ public class SecurityTokenBasedAuthenticationManager implements ReactiveAuthenti
                 .map(headers -> authWebClient.validateUserToken(authHeaders.getAuthToken(), authHeaders.getRequestId())
                         .doOnSuccess(user -> log
                                 .info("Authenticated user " + user.getUsername() + ", setting security context")))
-                .orElseThrow(() -> new MissingHeaderException("Authorization is missing"));
+                .orElseThrow(() -> new UnauthorizedTokenException("Authorization header is missing"));
     }
 }

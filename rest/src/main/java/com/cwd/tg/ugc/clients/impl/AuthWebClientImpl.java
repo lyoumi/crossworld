@@ -8,12 +8,13 @@ import com.cwd.tg.ugc.errors.exceptions.ServiceNotAvailableException;
 import com.cwd.tg.ugc.errors.exceptions.TokenValidationException;
 import com.cwd.tg.ugc.errors.exceptions.UnauthorizedTokenException;
 import com.cwd.tg.ugc.errors.http.HttpErrorMessage;
-import com.cwd.tg.ugc.filters.OutgoingRequestResponseLoggingFilter;
 import com.cwd.tg.ugc.security.User;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ClientResponse;
@@ -24,7 +25,9 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
+//TODO: FTCW-8 - Replace with feign clients
 @Component
 @RequiredArgsConstructor
 public class AuthWebClientImpl implements AuthWebClient {
@@ -38,14 +41,16 @@ public class AuthWebClientImpl implements AuthWebClient {
     private String authInstanceName;
 
     private final LoadBalancerClient loadBalancerClient;
-    private final OutgoingRequestResponseLoggingFilter loggingFilter;
+    private final WebClient webClient;
 
     @Override
     public Mono<User> validateUserToken(String token, String requestId) {
         var authBaseUrl = getAuthBaseUrl();
 
-        return buildWebClient(requestId, token, format(VALIDATE_TOKEN_URL_FORMAT, authBaseUrl))
+        return webClient
                 .get()
+                .uri(format(VALIDATE_TOKEN_URL_FORMAT, authBaseUrl))
+                .headers(getHttpHeaders(token, requestId))
                 .retrieve()
                 .onStatus(HttpStatus.FORBIDDEN::equals,
                         clientResponse -> Mono.just(new TokenValidationException("Unable to validate user token")))
@@ -55,17 +60,12 @@ public class AuthWebClientImpl implements AuthWebClient {
                 .bodyToMono(User.class);
     }
 
-    private WebClient buildWebClient(String requestId, String token, String url) {
-        return WebClient.builder()
-                .baseUrl(url)
-                .filter(loggingFilter)
-                .defaultHeaders(httpHeaders -> httpHeaders.putAll(
-                        Map.of(AUTHORIZATION, Collections.singletonList(token),
-                                REQUEST_ID_HEADER_NAME, Collections.singletonList(requestId))))
-                .build();
+    private Consumer<HttpHeaders> getHttpHeaders(String token, String requestId) {
+        return httpHeaders -> httpHeaders.putAll(
+                Map.of(AUTHORIZATION, Collections.singletonList(token),
+                        REQUEST_ID_HEADER_NAME, Collections.singletonList(requestId)));
     }
 
-    //TODO: FTCW-8 - Replace with feign clients
     private String getAuthBaseUrl() {
         return Optional.ofNullable(loadBalancerClient.choose(authInstanceName))
                 .map(ServiceInstance::getUri)

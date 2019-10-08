@@ -3,6 +3,7 @@ package com.cwd.tg.gss.data.events.adventure;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.joda.time.DateTime;
 
 import java.util.List;
 
@@ -17,4 +18,7 @@ public class Adventure {
     private AdventureStatus status;
     private List<String> adventureEvents;
     private int step;
+
+    private DateTime createdAt;
+    private DateTime lastModifiedAt;
 }

@@ -1,6 +1,7 @@
 package com.cwd.tg.gps.data.character;
 
 import lombok.Data;
+import org.joda.time.DateTime;
 
 @Data
 public class GameCharacter {
@@ -14,6 +15,9 @@ public class GameCharacter {
     private CharacterStats stats;
     private GameInventory gameInventory;
     private String userId;
+
+    private DateTime createdAt;
+    private DateTime lastModifiedAt;
 
     public boolean hasEvent() {
         return inAdventure || isFighting || isResting;

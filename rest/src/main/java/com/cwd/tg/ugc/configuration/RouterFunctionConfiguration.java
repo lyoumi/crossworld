@@ -9,6 +9,7 @@ import com.cwd.tg.ugc.data.internal.character.GameCharacter;
 import com.cwd.tg.ugc.handlers.AccountRequestHandler;
 import com.cwd.tg.ugc.handlers.GameRequestHandler;
 import com.cwd.tg.ugc.security.User;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -22,8 +23,8 @@ public class RouterFunctionConfiguration {
     public RouterFunction routerFunction(GameRequestHandler gameRequestHandler,
             AccountRequestHandler accountRequestHandler) {
         return route(GET("/private/rest/game/{id}"), request ->
-                        ServerResponse.ok().body(Mono.justOrEmpty(request.pathVariable("id"))
-                                .flatMap(gameRequestHandler::getUserGameCharacter), GameCharacter.class))
+                ServerResponse.ok().body(Mono.justOrEmpty(request.pathVariable("id"))
+                        .flatMap(gameRequestHandler::getUserGameCharacter), GameCharacter.class))
                 .andRoute(POST("/private/rest/game"), request ->
                         ServerResponse.ok().body(request.bodyToMono(PlayerCharacterInput.class)
                                 .flatMap(gameRequestHandler::createGameCharacter), GameCharacter.class))
