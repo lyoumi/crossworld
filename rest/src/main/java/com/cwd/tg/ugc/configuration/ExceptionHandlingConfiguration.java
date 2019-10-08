@@ -62,7 +62,7 @@ public class ExceptionHandlingConfiguration {
 
                     SecurityContextEmptyException.class, exception ->
                             ServerResponse.status(INTERNAL_SERVER_ERROR)
-                                    .body(fromObject(new HttpErrorMessage(1025001,
+                                    .body(fromObject(new HttpErrorMessage(1025000,
                                             INTERNAL_SERVER_ERROR.getReasonPhrase(),
                                             INTERNAL_SERVER_ERROR.getReasonPhrase()))),
 

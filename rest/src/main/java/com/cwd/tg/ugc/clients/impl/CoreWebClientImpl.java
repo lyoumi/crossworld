@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+//TODO: FTCW-8 - Replace with feign clients
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -62,7 +63,7 @@ public class CoreWebClientImpl implements CoreWebClient {
                                 .onStatus(httpStatus -> httpStatus.equals(NOT_FOUND),
                                         clientResponse -> Mono.error(
                                                 new GameCharacterNotFoundException(
-                                                        format("Unable to get response by user id %s", userId))))
+                                                        format("Unable to get character by user id %s", userId))))
                                 .onStatus(HttpStatus::isError, this::mapErrorResponses)
                                 .bodyToMono(GameCharacter.class));
     }
@@ -91,7 +92,6 @@ public class CoreWebClientImpl implements CoreWebClient {
                                 AUTHORIZATION, singletonList(authHeaders.getAuthToken())));
     }
 
-    //TODO: FTCW-8 - Replace with feign clients
     private String getCoreBaseUrl() {
         return Optional.ofNullable(loadBalancerClient.choose(coreInstanceName))
                 .map(ServiceInstance::getUri)

@@ -21,7 +21,7 @@ public class IncomingRequestResponseLoggingFilter implements WebFilter {
         return Mono.just(exchange.getRequest())
                 .doOnSuccess(this::logRequest)
                 .map(serverHttpRequest -> serverHttpRequest.getHeaders().get(REQUEST_ID_HEADER))
-                .switchIfEmpty(Mono.error(new MissingHeaderException(String.format("Required header is missing: %s", REQUEST_ID_HEADER))))
+                .switchIfEmpty(Mono.error(new MissingHeaderException("Required id header is missing")))
                 .doOnSuccess(header -> exchange.getResponse().getHeaders().add(REQUEST_ID_HEADER, header.toString()))
                 .then(chain.filter(exchange))
                 .doOnSuccess(aVoid -> logResponse(exchange.getRequest(), exchange.getResponse()))

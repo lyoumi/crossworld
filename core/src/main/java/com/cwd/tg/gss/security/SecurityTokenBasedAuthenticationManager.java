@@ -1,8 +1,9 @@
 package com.cwd.tg.gss.security;
 
 import com.cwd.tg.gss.clients.AuthWebClient;
-import com.cwd.tg.gss.errors.exceptions.MissingHeaderException;
 import com.cwd.tg.gss.errors.exceptions.TokenValidationException;
+import com.cwd.tg.gss.errors.exceptions.UnauthorizedTokenException;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
@@ -40,6 +41,6 @@ public class SecurityTokenBasedAuthenticationManager implements ReactiveAuthenti
                 .map(headers -> authWebClient.validateUserToken(authHeaders.getAuthToken(), authHeaders.getRequestId())
                         .doOnSuccess(user -> log
                                 .info("Authenticated user " + user.getUsername() + ", setting security context")))
-                .orElseThrow(() -> new MissingHeaderException("Authorization is missing"));
+                .orElseThrow(() -> new UnauthorizedTokenException("Authorization is missing"));
     }
 }

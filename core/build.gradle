@@ -26,8 +26,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-logging'
 
-    compile group: 'joda-time', name: 'joda-time', version: '2.10.4'
-    compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-joda', version: '2.9.10'
+    compile "joda-time:joda-time:${jodaVersion}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jacksonVersion}"
 
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
