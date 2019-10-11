@@ -23,6 +23,7 @@ import com.cwd.tg.gps.exception.BattleInfoNotFoundException;
 import com.cwd.tg.gps.exception.MonsterNotFoundException;
 import com.cwd.tg.gps.exception.ServiceCommunicationException;
 import com.cwd.tg.gps.exception.ServiceNotAvailableException;
+import com.cwd.tg.gps.security.SecurityService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,8 +67,8 @@ public class CoreWebClientImpl implements CoreWebClient {
     private String coreInstanceName;
 
     private final LoadBalancerClient loadBalancerClient;
-    private final AuthWebClientImpl authWebClient;
     private final WebClient webClient;
+    private final SecurityService securityService;
 
     @Override
     public Flux<GameCharacter> getAllGameCharacters() {
@@ -77,7 +78,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         String url = format(ALL_CHARACTERS_FORMAT, coreBaseUrl);
 
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flux()
                 .flatMap(token -> webClient
                         .get()
@@ -100,7 +101,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(SAVE_CHARACTER_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .put()
                         .uri(url)
@@ -119,7 +120,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ADVENTURE_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .post()
                         .uri(url)
@@ -138,7 +139,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(ADVENTURE_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .put()
                         .uri(url)
@@ -159,7 +160,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         String url = format(ADVENTURE_FORMAT, coreBaseUrl)
                 .concat("active/character/")
                 .concat(gameCharacterId);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .get()
                         .uri(url)
@@ -180,7 +181,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(BATTLE_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .post()
                         .uri(url)
@@ -199,7 +200,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(BATTLE_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .put()
                         .uri(url)
@@ -220,7 +221,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         String url = format(BATTLE_FORMAT, coreBaseUrl)
                 .concat("character/")
                 .concat(gameCharacterId);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .get()
                         .uri(url)
@@ -242,7 +243,7 @@ public class CoreWebClientImpl implements CoreWebClient {
 
         String url = format(BATTLE_FORMAT, coreBaseUrl).concat(id);
 
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .delete()
                         .uri(url)
@@ -260,7 +261,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .post()
                         .uri(url)
@@ -279,7 +280,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .put()
                         .uri(url)
@@ -298,7 +299,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .delete()
                         .uri(url)
@@ -316,7 +317,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(MONSTER_FORMAT, coreBaseUrl).concat(id);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .get()
                         .uri(url)
@@ -337,7 +338,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(AWARDS_FORMAT, coreBaseUrl);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .post()
                         .uri(url)
@@ -356,7 +357,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         String url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .get()
                         .uri(url)
@@ -377,7 +378,7 @@ public class CoreWebClientImpl implements CoreWebClient {
         var requestId = randomUUID().toString();
 
         var url = format(AWARDS_FORMAT, coreBaseUrl).concat(id);
-        return authWebClient.buildAuthToken(requestId)
+        return securityService.getUserToken(requestId)
                 .flatMap(token -> webClient
                         .delete()
                         .uri(url)

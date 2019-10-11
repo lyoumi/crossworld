@@ -1,7 +1,9 @@
 package com.cwd.tg.gps.client;
 
+import com.cwd.tg.gps.security.UserToken;
+
 import reactor.core.publisher.Mono;
 
 public interface AuthWebClient {
-    Mono<String> buildAuthToken(String requestId);
+    Mono<UserToken> generateUserToken(String requestId);
 }

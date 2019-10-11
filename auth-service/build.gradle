@@ -27,7 +27,7 @@ dependencies {
     implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    compile group: 'com.zaxxer', name: 'HikariCP', version: "$hikariVersion"
+    compile "com.zaxxer:HikariCP:${hikariVersion}"
     runtimeOnly 'mysql:mysql-connector-java'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

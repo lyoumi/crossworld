@@ -1,4 +1,4 @@
-package com.cwd.tg.gps.client.configuration;
+package com.cwd.tg.gps.configuration;
 
 import com.cwd.tg.gps.filters.OutgoingRequestResponseLoggingFilter;
 

@@ -6,6 +6,7 @@ import static org.springframework.web.reactive.function.BodyInserters.fromObject
 import com.cwd.tg.gps.client.AuthWebClient;
 import com.cwd.tg.gps.exception.ServiceNotAvailableException;
 import com.cwd.tg.gps.security.ServiceUser;
+import com.cwd.tg.gps.security.UserToken;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +36,7 @@ public class AuthWebClientImpl implements AuthWebClient {
     private final WebClient webClient;
 
     @Override
-    public Mono<String> buildAuthToken(String requestId) {
+    public Mono<UserToken> generateUserToken(String requestId) {
         var coreBaseUrl = getAuthBaseUrl();
 
         String url = format(AUTH_FORMAT, coreBaseUrl);
@@ -47,6 +48,7 @@ public class AuthWebClientImpl implements AuthWebClient {
                 .body(fromObject(serviceUser))
                 .retrieve()
                 .bodyToMono(String.class)
+                .map(UserToken::new)
                 .retry(3, throwable -> true);
     }
 
