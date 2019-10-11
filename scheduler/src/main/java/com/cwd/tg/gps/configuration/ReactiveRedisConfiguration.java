@@ -16,7 +16,7 @@ import javax.annotation.PostConstruct;
 
 @Configuration
 @AllArgsConstructor
-public class RedisReactiveConfiguration {
+public class ReactiveRedisConfiguration {
 
     private final ReactiveRedisConnectionFactory factory;
 
@@ -37,5 +37,4 @@ public class RedisReactiveConfiguration {
 
         return new ReactiveRedisTemplate<>(factory, context);
     }
-
 }
