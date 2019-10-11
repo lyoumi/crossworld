@@ -1,6 +1,6 @@
 package com.cwd.tg.gss.security;
 
-import com.cwd.tg.gss.clients.AuthWebClient;
+import com.cwd.tg.gss.errors.exceptions.TokenExpirationException;
 import com.cwd.tg.gss.errors.exceptions.TokenValidationException;
 import com.cwd.tg.gss.errors.exceptions.UnauthorizedTokenException;
 
@@ -18,7 +18,7 @@ import java.util.Optional;
 @AllArgsConstructor
 public class SecurityTokenBasedAuthenticationManager implements ReactiveAuthenticationManager {
 
-    private final AuthWebClient authWebClient;
+    private final JwtTokenUtil jwtTokenUtil;
 
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
@@ -36,9 +36,12 @@ public class SecurityTokenBasedAuthenticationManager implements ReactiveAuthenti
     }
 
     private Mono<User> authenticateToken(Authorization authenticationToken) {
-        AuthHeaders authHeaders = (AuthHeaders) authenticationToken.getCredentials();
+        AuthHeaders authHeaders = authenticationToken.getCredentials();
         return Optional.of(authHeaders)
-                .map(headers -> authWebClient.validateUserToken(authHeaders.getAuthToken(), authHeaders.getRequestId())
+                .map(headers -> Mono.just(headers.getAuthToken())
+                        .filter(token -> !jwtTokenUtil.isTokenExpired(token))
+                        .switchIfEmpty(Mono.error(new TokenExpirationException("Token expired")))
+                        .map(jwtTokenUtil::getUserFromToken)
                         .doOnSuccess(user -> log
                                 .info("Authenticated user " + user.getUsername() + ", setting security context")))
                 .orElseThrow(() -> new UnauthorizedTokenException("Authorization is missing"));

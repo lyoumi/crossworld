@@ -1,5 +1,6 @@
 package com.cwd.tg.gss.security;
 
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @NoArgsConstructor
+@AllArgsConstructor
 public class User implements UserDetails {
 
     private String username;

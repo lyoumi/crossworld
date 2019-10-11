@@ -1,5 +1,6 @@
 package com.cwd.tg.auth.security.impl;
 
+import com.cwd.tg.auth.data.Authority;
 import com.cwd.tg.auth.data.User;
 import com.cwd.tg.auth.errors.exceptions.TokenExpirationException;
 import com.cwd.tg.auth.errors.exceptions.TokenValidationException;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenUtilImpl implements JwtTokenUtil {
@@ -45,7 +47,13 @@ public class JwtTokenUtilImpl implements JwtTokenUtil {
 
     @Override
     public String generateToken(User user) {
+        var permissions = user.getRoles()
+                .stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(Authority::getPermission)
+                .collect(Collectors.toSet());
         Map<String, Object> claims = new HashMap<>();
+        claims.put("permissions", permissions);
         return generateToken(claims, user.getUsername());
     }
 
