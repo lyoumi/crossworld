@@ -5,9 +5,7 @@ import com.cwd.tg.gps.data.character.GameCharacter;
 import com.cwd.tg.gps.data.events.EventType;
 import com.cwd.tg.gps.data.events.awards.Awards;
 import com.cwd.tg.gps.data.events.battle.BattleInfo;
-import com.cwd.tg.gps.data.events.battle.Monster;
-import com.cwd.tg.gps.data.events.battle.MonsterType;
-import com.cwd.tg.gps.processors.BaseEventProcessor;
+import com.cwd.tg.gps.processors.CommonEventProcessor;
 import com.cwd.tg.gps.processors.EventProcessor;
 import com.cwd.tg.gps.processors.util.EventGeneratorUtils;
 
@@ -24,22 +22,21 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
-public class BaseEventProcessorImpl implements BaseEventProcessor {
+public class CommonEventProcessorImpl implements CommonEventProcessor {
 
     private static final Random RANDOM = new Random();
-
     private static final Map<EventType, List<EventType>> EVENT_GENERATION_RESTRICTION_MAP =
             Map.of(EventType.ADVENTURE, Collections.emptyList(),
                     EventType.BATTLE, List.of(EventType.ADVENTURE),
                     EventType.REGENERATION, List.of(EventType.ADVENTURE));
-    private final Map<EventType, Consumer<GameCharacter>> eventGenerator;
 
+    private final Map<EventType, Consumer<GameCharacter>> eventGenerator;
     private final Map<EventType, Consumer<GameCharacter>> eventProcessors;
 
     private final CoreWebClient coreWebClient;
     private final EventGeneratorUtils eventGeneratorUtils;
 
-    public BaseEventProcessorImpl(CoreWebClient coreWebClient,
+    public CommonEventProcessorImpl(CoreWebClient coreWebClient,
             EventProcessor battleEventProcessor,
             EventProcessor adventureEventProcessor,
             EventProcessor healingEventProcessor,
@@ -119,20 +116,14 @@ public class BaseEventProcessorImpl implements BaseEventProcessor {
     }
 
     private void generateBattle(GameCharacter gameCharacter) {
-        var monster = new Monster(
-                gameCharacter.getStats().getHitPoints() / 2,
-                gameCharacter.getStats().getAttack() / 2,
-                MonsterType.SOLDIER);
-        var awards = new Awards(UUID.randomUUID().toString(), 42, 73);
-        gameCharacter.setFighting(true);
-
-        coreWebClient.createMonster(monster)
-                .subscribe(m -> coreWebClient.createAwards(awards)
-                        .subscribe(bI ->
+        coreWebClient.createMonster(eventGeneratorUtils.generateMonster(gameCharacter))
+                .subscribe(m -> coreWebClient.createAwards(new Awards(UUID.randomUUID().toString(), 42, 73))
+                        .subscribe(aw ->
                                 coreWebClient.createBattleInfo(
                                         new BattleInfo(UUID.randomUUID().toString(), gameCharacter.getId(),
-                                                m.getId(), awards.getId()))
-                                        .subscribe(aw -> coreWebClient.saveGameCharacter(gameCharacter)
+                                                m.getId(), aw.getId()))
+                                        .doOnSuccess(bI -> gameCharacter.setFighting(true))
+                                        .subscribe(bI -> coreWebClient.saveGameCharacter(gameCharacter)
                                                 .subscribe())));
     }
 }

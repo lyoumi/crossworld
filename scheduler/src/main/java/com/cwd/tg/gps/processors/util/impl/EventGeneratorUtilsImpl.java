@@ -1,7 +1,10 @@
 package com.cwd.tg.gps.processors.util.impl;
 
+import com.cwd.tg.gps.data.character.GameCharacter;
 import com.cwd.tg.gps.data.events.adventure.Adventure;
 import com.cwd.tg.gps.data.events.adventure.AdventureStatus;
+import com.cwd.tg.gps.data.events.battle.Monster;
+import com.cwd.tg.gps.data.events.battle.MonsterType;
 import com.cwd.tg.gps.processors.util.EventGeneratorUtils;
 import com.cwd.tg.gps.repository.AdventureRepository;
 
@@ -28,5 +31,13 @@ public class EventGeneratorUtilsImpl implements EventGeneratorUtils {
                 .map(adventureEntity -> new Adventure(characterId,
                         adventureEntity.getDescription(), awardsId, AdventureStatus.IN_PROGRESS,
                         adventureEntity.getEvents(), START_ADVENTURE_STEP_NUMBER));
+    }
+
+    @Override
+    public Monster generateMonster(GameCharacter gameCharacter) {
+        return new Monster(
+                gameCharacter.getStats().getHitPoints() / 2,
+                gameCharacter.getStats().getAttack() / 2,
+                MonsterType.SOLDIER);
     }
 }
