@@ -1,6 +1,6 @@
 package com.cwd.tg.gps.scheduler;
 
-import com.cwd.tg.gps.processors.BaseEventProcessor;
+import com.cwd.tg.gps.processors.CommonEventProcessor;
 import com.cwd.tg.gps.services.GameCharacterService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class GameEventScheduler {
     private int windowDelayTime;
 
     private final GameCharacterService gameCharacterService;
-    private final BaseEventProcessor baseEventProcessor;
+    private final CommonEventProcessor commonEventProcessor;
 
     @Scheduled(fixedDelayString = "${scheduler.delay}")
     public void scheduleGameEvent() {
@@ -35,7 +35,7 @@ public class GameEventScheduler {
                         throwable -> log.error("Something went wrong. Error during character processing.", throwable))
                 .window(windowSize)
                 .delayElements(Duration.ofSeconds(windowDelayTime), Schedulers.elastic())
-                .subscribe(gcm -> gcm.subscribe(baseEventProcessor::processCharacterEvents,
+                .subscribe(gcm -> gcm.subscribe(commonEventProcessor::processCharacterEvents,
                         throwable -> log.error("Something went wrong", throwable)),
                         throwable -> log.error("Something went wrong", throwable));
     }
