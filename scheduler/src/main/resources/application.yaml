@@ -22,7 +22,7 @@ window:
   size: 100
 
 scheduler:
-  delay: 30000
+  delay: 300000
 
 services:
   core:
